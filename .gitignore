@@ -1,0 +1,9 @@
+build/
+firmware/
+fw/
+app/lwip/*.o
+*.DS_Store
+.localhistory/
+*~
+nodemcu-boot
+sdk-overrides/lib/*.a
