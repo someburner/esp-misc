@@ -530,8 +530,6 @@ static void read_temp_done_cb(void)
    os_timer_disarm(&onewire_timer);
    onewire_timer_arg = DS_SEQ_NEXT_READ_T;
    os_timer_arm(&onewire_timer, 2431UL, false);
-   // hw_timer_arm(10);
-   // OW_init_seq(DS_SEQ_UUID_T);
 }
 
 /* This is called immediately at the end of a conv_t sequence */
@@ -623,7 +621,7 @@ void onewire_nb_init()
 
    /* Init hw timer */
    hw_timer_init(FRC1_SOURCE, 0); // disable autoload
-   hw_timer_set_func(ow_hw_timer_cb, NULL);
+   uint32_t * argptr = hw_timer_set_func(ow_hw_timer_cb);
 
    OW_init_seq(DS_SEQ_UUID_T);
 #else

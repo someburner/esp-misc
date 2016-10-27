@@ -32,6 +32,7 @@
 #include "driver/spi_overlap.h"
 #endif
 
+#include "driver/driver_event.h"
 #include "driver/uart.h"
 #include "driver/gpio16.h"
 #include "driver/ws2812.h"
@@ -244,8 +245,11 @@ void setup_init(void)
    }
 #endif
 
+   driver_event_init();
+
 #ifdef EN_WS8212_HPSI
    ws2812_init();
+   ws2812_fade_init();
 #endif
 
 #ifdef DEVELOP_VERSION

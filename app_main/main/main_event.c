@@ -19,7 +19,6 @@
 
 #include "../app_common/libc/c_stdio.h"
 #include "../app_common/include/server_config.h"
-#include "../app_common/newcrypto/crypto_test.h"
 #include "../app_common/platform/flash_fs.h"
 #include "../app_common/platform/led.h"
 #include "../app_common/util/netutil.h"
@@ -608,8 +607,6 @@ void main_event_init(MAIN_MON_T * clientPtr)
    /* Attach WiFi Event Handler */
    wifi_set_event_handler_cb(wifiHandleEventCb);
 
-   // testSignOpen();
-   testEncrypt();
 }
 
 

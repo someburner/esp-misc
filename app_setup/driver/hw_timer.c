@@ -33,7 +33,8 @@ static int autoload_en = false;
 *******************************************************************************/
 /* Callback declaration */
 static void (* user_hw_timer_cb)(uint32_t) = NULL;
-static uint32_t callback_arg;
+static uint32_t callback_arg = 0;
+static uint32_t * callback_arg_ptr = &callback_arg;
 
 /******************************************************************************
 * FunctionName : hw_timer_set_func_internal
@@ -41,9 +42,8 @@ static uint32_t callback_arg;
 * Parameters   : void (* user_hw_timer_cb_set)(void):
                         timer callback function,
 *******************************************************************************/
-static void ICACHE_RAM_ATTR hw_timer_set_func_internal(void (* user_hw_timer_cb_set)(uint32_t), uint32_t arg)
+static void ICACHE_RAM_ATTR hw_timer_set_func_internal(void (* user_hw_timer_cb_set)(uint32_t))
 {
-   callback_arg = arg;
    user_hw_timer_cb = user_hw_timer_cb_set;
 }
 
@@ -108,12 +108,6 @@ bool hw_timer_arm(u32 val)
 {
    if ( hw_timer_state >= HW_TIMER_READY )
    {
-      // if
-      // {
-      //    TM1_EDGE_INT_ENABLE();
-      //    ETS_FRC1_INTR_ENABLE();
-      // }
-
       hw_timer_arm_internal(val, (hw_timer_state != HW_TIMER_ACTIVE) ? true:false);
       hw_timer_state = HW_TIMER_ACTIVE;
       return true;
@@ -123,19 +117,20 @@ bool hw_timer_arm(u32 val)
    return false;
 }
 
-void hw_timer_set_func( void (* user_hw_timer_cb_set)(uint32_t), uint32_t arg )
+uint32_t * hw_timer_set_func( void (* user_hw_timer_cb_set)(uint32_t))
 {
    if (hw_timer_state < HW_TIMER_INIT)
-      return;
+      return NULL;
 
    if (hw_timer_state == HW_TIMER_ACTIVE)
    {
       os_printf("Stop current timer first!\n");
-      return;
+      return NULL;
    }
 
    hw_timer_state = HW_TIMER_READY;
-   hw_timer_set_func_internal( user_hw_timer_cb_set, arg );
+   hw_timer_set_func_internal( user_hw_timer_cb_set );
+   return callback_arg_ptr;
 }
 
 /******************************************************************************

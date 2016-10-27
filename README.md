@@ -17,7 +17,7 @@ Subject to change but so far:
    Uses the FRC1 hardware timer to step through a state machine, and thus does
    not tie up the processor with delays (as it does in the popular DS18B20
    Arduino driver).
- * Demonstrates Public Key crypto using NaCl. Code taken from NaCl for AVR.
+ * Demonstrates Public Key crypto using NaCl. Code taken from [NaCl for AVR](https://munacl.cryptojedi.org/atmega.shtml).
 
 Future possibilities:
 
@@ -26,8 +26,6 @@ Future possibilities:
    This would allow us to drive the DS18B20 without using
    ets_intr_lock()/ets_intr_unlock(), and would also prevent it from messing up
    the Onewire state machine.
- * Icing on the cake would be using SPI interrupts to remove loops from the
-   WS2812 driver.
 
 ## Serial Monitor
 -----------------

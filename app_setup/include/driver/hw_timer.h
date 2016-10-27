@@ -37,7 +37,8 @@ typedef struct
 
 
 void hw_timer_disarm();
-void hw_timer_set_func(void (* user_hw_timer_cb_set)(uint32_t), uint32_t arg);
+uint32_t * hw_timer_set_func( void (* user_hw_timer_cb_set)(uint32_t));
+// void hw_timer_set_func(void (* user_hw_timer_cb_set)(uint32_t), uint32_t arg);
 bool hw_timer_arm(u32 val);
 HW_TIMER_STATE_T hw_timer_get_state(void);
 

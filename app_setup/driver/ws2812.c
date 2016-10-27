@@ -8,13 +8,18 @@
 
 #include "driver/spi.h"
 #include "driver/gpio16.h"
+#include "driver/hw_timer.h"
 #include "driver/ws2812.h"
 
 #define SPI_DEV HSPI
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-#define PIXELS 32
+static ws2812_driver_t ws_driver;
+static ws2812_driver_t * ws = &ws_driver;
+
+static ws2812_fade_inout_t fade_st;
+static ws2812_fade_inout_t * fade = &fade_st;
 
 os_timer_t ws2812_timer;
 static uint32_t ws2812_timer_arg = 0;
@@ -71,13 +76,18 @@ void ICACHE_RAM_ATTR ws2812_sendByte(uint8_t b)
    }
 }
 
-void ws2812_sendPixel(uint8_t r, uint8_t g, uint8_t b)
+// Display a single color on the whole string
+void ws2812_sendPixels()
 {
-  ws2812_sendByte(g);        // NeoPixel wants colors in green-then-red-then-blue order
-  ws2812_sendByte(r);
-  ws2812_sendByte(b);
+    // NeoPixel wants colors in green-then-red-then-blue order
+   ets_intr_lock();
+   ws2812_sendByte(ws->g);
+   ws2812_sendByte(ws->r);
+   ws2812_sendByte(ws->b);
+   ets_intr_unlock();
 }
 
+#if 0
 // Display a single color on the whole string
 void ws2812_showColor(uint16_t count, uint8_t r , uint8_t g , uint8_t b)
 {
@@ -88,17 +98,44 @@ void ws2812_showColor(uint16_t count, uint8_t r , uint8_t g , uint8_t b)
    ets_intr_unlock(); /* These seem to be OK */
    ws2812_show();  // latch the colors
 }
+#endif
 
+void ws2812_showit_fade(void)
+{
+   if (ws->cur_pixel < PIXEL_COUNT)
+   {
+      ws2812_sendPixels();
+      ws->cur_pixel++;
+   } else {
+      ws->cur_pixel = 0;
+   }
+}
+
+void ws2812_doit(void)
+{
+   switch (ws->cur_anim)
+   {
+      case WS2812_ANIM_FADE_INOUT:
+         ws2812_showit_fade();
+         hw_timer_arm(10);
+         break;
+
+      default:
+         return;
+   }
+}
+
+#if 0
 void ws2812_colorTransition(  uint8_t from_r, uint8_t from_g, uint8_t from_b,
                               uint8_t to_r,   uint8_t to_g,   uint8_t to_b)
 {
    // draw one more of the desired colour, each time around the loop
    uint16_t iteration;
-   for (iteration = 0; iteration < PIXELS; iteration++)
+   for (iteration = 0; iteration < PIXEL_COUNT; iteration++)
    {
       // ets_intr_lock(); /* will crash eventually */
       uint16_t pixel;
-      for (pixel = 0; pixel < PIXELS; pixel++)
+      for (pixel = 0; pixel < PIXEL_COUNT; pixel++)
       {
          if (pixel < iteration)
             ws2812_sendPixel (to_r, to_g, to_b);
@@ -109,54 +146,65 @@ void ws2812_colorTransition(  uint8_t from_r, uint8_t from_g, uint8_t from_b,
       ws2812_show();
    }
 }
+#endif
 
-void ws2812_show()
+void ws2812_show(void)
 {
    os_delay_us(9);
 }
 
-// #define FIRE_BRICK
-
 static void ws2812_timer_cb(void* arg)
 {
-
-#ifdef FIRE_BRICK
-   ws2812_showColor (PIXELS, 0xB2, 0x22, 0x22);  // firebrick
-#else
-   static uint8_t fadeInOut_count = 0;
-
-   if (cur_pattern >= (ARRAY_SIZE(patterns)-1))
+   if (fade->cur_pattern >= (ARRAY_SIZE(patterns)-1))
    {
-      cur_pattern = 0;
+      fade->cur_pattern = 0;
    }
 
-   if (fade_in_out && (cur_m == 100))
+   if ( (fade->in_out) && (fade->cur_m == 100) )
    {
-      fade_in_out = false;
+      fade->in_out = false;
    }
 
-   if ( (!fade_in_out) && (cur_m == 0))
+   if ( !(fade->in_out) && (fade->cur_m == 0) )
    {
-      cur_pattern++;
-      fade_in_out = true;
+      fade->cur_pattern++;
+      fade->in_out = true;
    }
 
-   if (fade_in_out)
-   {
-      ws2812_showColor(PIXELS, patterns [cur_pattern] [0] * cur_m, patterns [cur_pattern] [1] * cur_m, patterns [cur_pattern] [2] * cur_m);
-      cur_m++;
-   }
+   /* Freshly populate rgb */
+   ws->cur_pixel = 0;
+   ws->r = patterns[fade->cur_pattern][0] * fade->cur_m;
+   ws->g = patterns[fade->cur_pattern][1] * fade->cur_m;
+   ws->b = patterns[fade->cur_pattern][2] * fade->cur_m;
+   ws2812_doit();
+
+   if (fade->in_out)
+      fade->cur_m++;
    else
-   {
-      ws2812_showColor(PIXELS, patterns [cur_pattern] [0] * cur_m, patterns [cur_pattern] [1] * cur_m, patterns [cur_pattern] [2] * cur_m);
-      cur_m--;
-   }
-
-#endif
+      fade->cur_m--;
 }
 
+void ws2812_fade_init(void)
+{
+   ws->cur_anim = WS2812_ANIM_FADE_INOUT;
 
-bool ws2812_spi_init()
+   fade->cur_m = 0;
+   fade->cur_pattern = 0;
+   fade->in_out = true;
+
+   ws2812_clear();
+   os_timer_arm(&ws2812_timer, 10UL, true);
+}
+
+void ws2812_fade_stop(void)
+{
+   ws2812_clear();
+   os_timer_disarm(&ws2812_timer);
+   ws->cur_anim = WS2812_ANIM_NONE;
+   fade = NULL;
+}
+
+bool ws2812_spi_init(void)
 {
    spi_init_gpio(SPI_DEV, SPI_CLK_USE_DIV);
    spi_clock(SPI_DEV, 2, 2); // prediv==2==40mhz, postdiv==1==40mhz
@@ -172,22 +220,31 @@ bool ws2812_spi_init()
 
    return true;
 }
+void ws2812_clear(void)
+{
+   // Change to 0s
+   ws->r = 0;
+   ws->g = 0;
+   ws->b = 0;
 
-bool ws2812_init()
+   ws2812_show(); // in case MOSI went high, latch in whatever-we-sent
+   ws2812_sendPixels();
+   ws2812_show();
+}
+
+bool ws2812_init(void)
 {
    if (ws2812_spi_init())
    {
       NODE_DBG("ws2812_spi_init ok\n");
-      ws2812_show();                       // in case MOSI went high, latch in whatever-we-sent
-      ws2812_sendPixel (0, 0, 0);           // now change back to black
-      ws2812_show();
+      ws2812_clear();
    }
+
+   driver_event_register_ws(ws);
 
    os_timer_disarm(&ws2812_timer);
    os_timer_setfn(&ws2812_timer, (os_timer_func_t *) ws2812_timer_cb, &ws2812_timer_arg);
-   os_timer_arm(&ws2812_timer, 10UL, true);
-
-   // ws2812_seq_test();
+   // os_timer_arm(&ws2812_timer, 10UL, true);
 
    return true;
 }
