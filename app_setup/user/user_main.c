@@ -127,6 +127,7 @@ static void config_wifi()
 {
 #ifdef USER_HOSTNAME
    wifi_station_set_hostname(USER_HOSTNAME);
+   NODE_DBG("Hostname: %s\n", wifi_station_get_hostname());
 #endif /* USER_HOSTNAME */
 
    NODE_DBG("Configuring WiFi...\n");
@@ -155,10 +156,9 @@ static void config_wifi()
    os_memcpy(stconf.password, sta_password, strlen(sta_password));
    NODE_DBG("pw %s\n", (char*)stconf.password);
    #endif
-   NODE_DBG("%s", wifi_station_get_hostname());
    wifi_station_set_config(&stconf);
 #else
-   NODE_ERR("No Makefil WiFi config available.\n");
+   NODE_ERR("No Makefile WiFi config available.\n");
    return;
 #endif
 
@@ -188,12 +188,8 @@ static void mount(int fs, bool force)
 void setup_init(void)
 {
    /* Set up gpio/LED(s) */
-#ifndef IRQ_SPAMMER
    // led_init();
    gpio_init();
-#else
-   gpio_init();
-#endif
 
    uint32_t fs_size;
    fs_size = flash_safe_get_size_byte();
@@ -229,10 +225,7 @@ void setup_init(void)
 #if FLASH_UNIQUE_ID_EN
    /* Manufacturer + Device ID (if available) */
    NODE_DBG("flash_dev_mfg_id: ");
-   if (flash_dev_mfg_id)
-      NODE_DBG("0x%04x\n", (uint16_t) (flash_dev_mfg_id & 0xFFFF) );
-   else
-      NODE_DBG("N/A\n");
+   NODE_DBG("0x%04x\n", (uint16_t) (flash_dev_mfg_id & 0xFFFF) );
 
    /* Unique ID (if available) */
    NODE_DBG("UUID: ");
@@ -251,14 +244,9 @@ void setup_init(void)
    }
 #endif
 
-#if 0
-   /* Initialize RFM69 last in case we immediately get a message */
-   int res = init_rfm_handler();
-   NODE_DBG("RFM69 Setup Init %s!\n", (res==1) ? "OK":"Error");
-#endif
-
+#ifdef EN_WS8212_HPSI
    ws2812_init();
-
+#endif
 
 #ifdef DEVELOP_VERSION
    os_memset(&heapTimer,0,sizeof(os_timer_t));
@@ -362,14 +350,15 @@ void user_init(void)
          // flash_dev_mfg_id = spi_transaction(1, 8, 0x9F, 0, 0x00, 0, 0, 24, 0); // 0x1640e0
          /* Read Manufacture ID + Device ID */
          spi_transaction(1, 8, 0x90, 24, 0x00000000, 0, 0, 16, &flash_dev_mfg_id, 0); // 0xe015 x2
-         /* Read Unique ID. 64 din/32 skip */
-         spi_transaction(1, 8, 0x4B, 0, 0, 0, 0, 64, flash_uid_arr, 32);
+         /* BergMicro does not support AFAIK. */
+         memset(flash_uid_arr, 0, sizeof(flash_uid_arr));
          break;
       default:
-         flash_dev_mfg_id = 0;
+         /* Read Manufacture ID + Device ID. Should work for all ESP Flash chips. */
+         spi_transaction(1, 8, 0x90, 24, 0x00000000, 0, 0, 16, &flash_dev_mfg_id, 0);
+         /* Erase uid_arr so we know it wasn't read */
          memset(flash_uid_arr, 0, sizeof(flash_uid_arr));
    }
-
    hspi_overlap_deinit(); // Turn off overlap mode. Back to normal operation
 #endif
 

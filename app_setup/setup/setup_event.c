@@ -19,24 +19,25 @@
 
 #include "../app_common/libc/c_stdio.h"
 #include "../app_common/include/server_config.h"
-#include "../app_common/newcrypto/crypto_test.h"
 #include "../app_common/platform/flash_fs.h"
 #include "../app_common/platform/led.h"
 #include "../app_common/util/netutil.h"
-
 #include "../app_common/rboot/rboot-api.h"
 
 #include "mqtt_setup/mqtt_api.h"
 #include "driver/uart.h"
 
+#include "setup_api.h"
+#include "setup_cli.h"
+#include "setup_event.h"
+
+#ifdef TEST_CRYPTO
+#include "../app_common/newcrypto/crypto_test.h"
+#endif
 #ifdef EN_TEMP_SENSOR
    #include "driver/hw_timer.h"
    #include "driver/onewire_nb.h"
 #endif
-
-#include "setup_event.h"
-#include "setup_api.h"
-#include "setup_cli.h"
 
 static bool gotSntpTs = false;
 
@@ -608,8 +609,13 @@ void setup_event_init(SETUP_MON_T * clientPtr)
    /* Attach WiFi Event Handler */
    wifi_set_event_handler_cb(wifiHandleEventCb);
 
-   // testSignOpen();
+#ifdef TEST_CRYPTO_SIGN_OPEN
+   testSignOpen();
+#endif
+#ifdef TEST_CRYPTO_PK_ENCRYPT
    testEncrypt();
+#endif
+
 }
 
 

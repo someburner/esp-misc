@@ -5,10 +5,10 @@
  * SPI Flash Chips
  * ========================================================================== */
 /* Attempt to read  64-bit Unique ID if available */
-// #define FLASH_UNIQUE_ID_ENABLE
+#define FLASH_UNIQUE_ID_ENABLE
 
 #define WINBOND   0xEF
-#define BERGMICRO 0x0E
+#define BERGMICRO 0xE0
 
 #ifdef FLASH_UNIQUE_ID_ENABLE
    #define FLASH_UNIQUE_ID_EN 1

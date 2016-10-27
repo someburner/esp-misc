@@ -4,6 +4,8 @@
 #include "user_config.h"
 #if ONEWIRE_NONBLOCKING
 
+// #define OW_ADDTL_DEBUG // additional debugging option
+
 #define OW_SPAD_SIZE 9
 #define OW_UUID_LEN 8
 
@@ -74,10 +76,9 @@ typedef void (*OW_cb_t)(void);
 typedef struct
 {
    uint8_t * seq_arr;   // read temp, read rom, etc
-   uint8_t * arg_arr;   // read temp, read rom, etc
+   uint8_t * arg_arr;   // args for read seqs
 
-   uint8_t   seq_len;
-
+   uint8_t seq_len;     // # of ops in this sequence
    uint8_t seq_state;   // init, started, stopped
    uint8_t seq_pos;     // reset, skip rom, conv, etc
 
@@ -85,15 +86,18 @@ typedef struct
    uint8_t cur_op;      // where are we in the operation
    uint8_t delay_count; // 1 count per 10us
 
+   uint8_t error;       // storage for error, should one occur
+
    uint8_t spad_buf[OW_SPAD_SIZE]; // scratchpad buffer for temperature data
-   uint8_t UUID[OW_UUID_LEN];     // unique ID for this device
+   uint8_t UUID[OW_UUID_LEN];      // unique ID for this device
 
-   uint8_t error;
-   OW_cb_t callback;
+   OW_cb_t callback;    // Callback to execute at the end of a sequence
 
-   /* Useful for debugging */
-   // uint16_t readbyte_count;
-   // uint16_t readbit_count;
+#ifdef OW_ADDTL_DEBUG
+   /* Useful for debugging state machine */
+   uint16_t readbyte_count;
+   uint16_t readbit_count;
+#endif
 
 } onewire_driver_t;
 

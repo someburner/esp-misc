@@ -43,6 +43,11 @@ platformio serialports monitor -b 921600 -p /dev/ftdi_esp # run
 ## Configuring
 --------------
 
+**NOTE**: Onewire, WS2812, Crypto stuff currently on setup0/setup1. Copy needed
+code, driver files into app_main if you want those on app_main.
+
+**Common**:
+
  * `app_common/include/hardware_defs.h`:
    - `FLASH_UNIQUE_ID_ENABLE`: Comment/Uncomment to attempt to read the SPI
    Flash chip's UUID. **NOTE**: Only works on certain flash chips that have a
@@ -54,11 +59,23 @@ platformio serialports monitor -b 921600 -p /dev/ftdi_esp # run
    `MY_BROKER` to define your own.
    - `INC_TEST_TOPIC_SET`: Include a test topic to pub/sub to
 
+**Setup**:
+
+ * `app_setup/include/user_config.h`:
+   - `EN_TEMP_SENSOR`: Comment/Uncomment to initialize Onewire non-blocking
+     driver. Uses timer to do a conversion every few seconds and publish on the
+     MQTT test topic.
+   - `EN_WS8212_HPSI`: Comment/Uncomment to initialize WS8212 HSPI driver and
+     arm a timer to drive with a multi-color fade-in/fade-out effect.
+   - `TEST_CRYPTO_SIGN_OPEN`: Comment/Uncomment to test opening a signed
+      crypto_box message.
+   - `TEST_CRYPTO_PK_ENCRYPT`: Comment/Uncomment to test encrpyting a message
+      using asymmetric public key auth.
 
 ## Usage
 --------
 
-#### Edit Makefile(s)
+### Edit Makefile(s)
 
  * Update `OPENSDK_ROOT` in **Makefile** with the absolute path to esp-open-sdk
  * Update `OPENSDK_ROOT` in **rboot/Makefile** as well
@@ -66,7 +83,7 @@ platformio serialports monitor -b 921600 -p /dev/ftdi_esp # run
    network's settings if you would like the chip to automatically connect to a
    network via DHCP. `STA_PASS_EN` can be set to 0 if no password is needed.
 
-#### Compile
+### Compile
 
 ```
 make clean
@@ -77,7 +94,7 @@ make
 `APP_TARGET = 0` to `APP_TARGET = 1`. App main is the same for both slots. See
 "Project Structure" section for details.
 
-#### Flashing
+### Flashing
 
 To simplify flashing, I've created a simple utility for generating the rBoot
 config sector. So once you have compiled everything, set `ROM_TO_BOOT` in
@@ -101,13 +118,21 @@ make flash
 
 **Bold** == for flashing only
 
-| I/O          | ESP-12E  |
+|    Signal    | ESP-12E  |
 |:------------:|:--------:|
 | 10K PULLUP   | CH_PD/EN |
 | 10K PULLDOWN | GPIO15   |
 | 10K PULLUP   | GPIO0    |
 | **GND**      | GPIO0    |
 | BUTTON-GND   | RST      |
+
+### WS2812
+
+|  WS2812  |  ESP-12E  |
+|:--------:|:---------:|
+|   +5V    |    N/C    |
+|   GND    |    GND    |
+|  Data    | GPIO13 (MOSI) |
 
 ### 1-wire/DS18B20
 
@@ -124,7 +149,8 @@ do so you'll have to edit the Onewire driver to use different delays/sequences.
 
 **NOTE2**: Currently only supports a single Onewire device on the bus. To add
 more devices, you'll need to edit the delays a bit and add another sequence to
-send the UUID before sending the command.
+send the UUID before sending the command. See NOTE in
+`app_setup/include/driver/maxim28.h` for info on how you can do this.
 
 
 ## Project Structure

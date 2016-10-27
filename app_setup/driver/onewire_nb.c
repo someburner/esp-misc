@@ -133,7 +133,9 @@ again:
          os_delay_us(1);
          GPIO_DIS_OUTPUT(ONEWIRE_PIN); // line release
          one_driver->cur_op = OW_READ_OP_SAMPLE;
-         // one_driver->readbit_count++; // uncomment for debugging
+         #ifdef OW_ADDTL_DEBUG
+         one_driver->readbit_count++;
+         #endif
       } break;
 
       case OW_READ_OP_SAMPLE:
@@ -162,7 +164,10 @@ again:
                /* Reset data and bitMask. Important! */
                data = 0;
                bitMask = 0x01;
-               // one_driver->readbyte_count++; // uncomment for debugging
+
+               #ifdef OW_ADDTL_DEBUG
+               one_driver->readbyte_count++;
+               #endif
 
                /* No more read sequences left. We're completely done. */
                if ( !(--readsLeft) )
@@ -455,7 +460,11 @@ static void onewire_seq_timer_cb(void * arg)
 
       /* Read is done. Do nothing. */
       case DS_SEQ_READ_T:
-         OW_DBG("all done\n");
+         #ifdef OW_ADDTL_DEBUG
+         OW_DBG("Read done: %d bits, %d bytes\n", one_driver->readbit_count, one_driver->readbyte_count);
+         one_driver->readbit_count = 0;
+         one_driver->readbyte_count = 0;
+         #endif
          break;
 
       case DS_SEQ_NEXT_READ_T:

@@ -2,9 +2,14 @@
 #define __USER_CONFIG_H__
 
 /* ========================================================================== *
- * Quick access test defines
+ * Quick access defines
  * ========================================================================== */
-// #define TEST_CRYPTO
+// #define EN_WS8212_HPSI
+
+// #define EN_TEMP_SENSOR
+
+// #define TEST_CRYPTO_SIGN_OPEN
+// #define TEST_CRYPTO_PK_ENCRYPT
 
 /* ========================================================================== *
  * Hardware definitions
@@ -12,10 +17,16 @@
 #define LED_PIN_ONBOARD          4 // GPIO2
 #define LED_PIN_WIFI             1 // GPIO5
 
-// #define EN_TEMP_SENSOR
+
+/* ========================================================================== *
+ * Compile-time switches
+ * ========================================================================== */
+#if defined(TEST_CRYPTO_SIGN_OPEN) || defined(TEST_CRYPTO_PK_ENCRYPT)
+#define TEST_CRYPTO
+#endif
 
 #ifdef EN_TEMP_SENSOR
-   #define ONEWIRE_PIN              5 // GPIO5
+   #define ONEWIRE_PIN         5 // GPIO5
    #define ONEWIRE_NONBLOCKING 1
 #else
    #define ONEWIRE_NONBLOCKING 0

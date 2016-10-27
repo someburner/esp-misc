@@ -117,20 +117,6 @@ typedef struct {
    uint8 padding[2];
 } Temperature;
 
-#else /* ONEWIRE_BLOCKING */
-
-#define MAX_DS18B20_SENSOR 1
-#define MAX_TEMPERATURE_SENSOR 15
-
-struct Temperature {
-   bool set;
-   bool override;
-   char sign;
-   uint16 val;
-   uint16 fract;
-   uint8 missed;
-   char address[20];
-};
-#endif
+#endif /* End ONEWIRE_NONBLOCKING */
 
 #endif
