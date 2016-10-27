@@ -27,6 +27,7 @@ typedef struct
    uint8_t cur_pattern;
    uint8_t in_out; // bool
    uint8_t padding;
+   float   period;
 } ws2812_fade_inout_t;
 
 typedef struct
@@ -36,8 +37,8 @@ typedef struct
    uint8_t b;
    uint8_t brightness;
 
-   uint16_t cur_anim;
    uint16_t cur_pixel;
+   uint16_t cur_anim;
 
    os_timer_t timer;
    uint32_t timer_arg;
@@ -60,6 +61,8 @@ void ws2812_doit(void);
 void ws2812_anim_init(uint8_t anim_type);
 void ws2812_showit_fade(void);
 void ws2812_anim_stop(void);
+
+void ws2812_set_brightness(uint8_t brightness);
 
 void ws2812_show(void);
 void ws2812_clear(void);

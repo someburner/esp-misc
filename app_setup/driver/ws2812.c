@@ -14,7 +14,6 @@
   + https://wp.josh.com/2014/05/13/ws2812-neopixels-are-not-so-finicky-once-you-get-to-know-them/
 */
 
-
 #include "user_config.h"
 #include "osapi.h"
 #include "mem.h"
@@ -29,8 +28,24 @@
 #include "driver/ws2812.h"
 
 #define SPI_DEV HSPI
+#define REFRESH_RATE 1000UL
+#define INITIAL_BRIGHTNESS 64
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+
+/* Obtain callback timer div from a desired period (in secs) and # of         *
+ * callbacks per "period", and make sure it's at least 1ms                    */
+#define MS_DIV_PER_CB(desired_per, cbs_per_per)  (( (uint32_t)(1000UL * (desired_per/cbs_per_per)) ) | 1UL)
+#define MOD_BRIGHTNESS(pixel, level) \
+   (pixel) = ( (pixel * level) >> 8 );
+
+#define UPDATE_BRIGHTNESS() \
+   if (ws->brightness) \
+   { \
+      MOD_BRIGHTNESS(ws->r, ws->brightness); \
+      MOD_BRIGHTNESS(ws->g, ws->brightness); \
+      MOD_BRIGHTNESS(ws->b, ws->brightness); \
+   }
 
 static ws2812_driver_t ws_driver;
 static ws2812_driver_t * ws = &ws_driver;
@@ -40,6 +55,23 @@ static ws2812_fade_inout_t * fade = &fade_st;
 
 os_timer_t ws2812_timer;
 static uint32_t ws2812_timer_arg = 0;
+
+uint8_t  *ptr;
+
+// float patterns [] [3] = {
+//   { 0.5, 0, 0 },  // red
+//   { 0, 0.5, 0 },  // green
+//   { 0, 0, 0.5 },  // blue
+//   { 0.5, 0.5, 0 },  // yellow
+//   { 0.5, 0, 0.5 },  // magenta
+//   { 0, 0.5, 0.5 },  // cyan
+//   { 0.5, 0.5, 0.5 },  // white
+//   { 160.0 / 512, 82.0 / 512, 45.0 / 512 },  // sienna
+//   { 46.0 / 512, 139.0 / 512, 87.0 / 512 },  // sea green
+// };
+
+  // { 320.0 / 512, 164.0 / 512, 90.0 / 512 },  // sienna
+  // { 92.0 / 512, 278.0 / 512, 87.0 / 174 },  // sea green
 
 float patterns [] [3] = {
   { 1, 0, 0 },  // red
@@ -140,13 +172,14 @@ void ws2812_doit(void)
 /* Callback specifically for fade animation */
 static void ws2812_fade_cb(void)
 {
-   if (fade->cur_pattern >= (ARRAY_SIZE(patterns)-1))
+   if (fade->cur_pattern >= (ARRAY_SIZE(patterns)))
    {
       fade->cur_pattern = 0;
    }
 
-   if ( (fade->in_out) && (fade->cur_m == 100) )
+   if ( ( fade->in_out) && ( fade->cur_m >= 255 ) )
    {
+      NODE_DBG("ws->r=%hhd\n", ws->r);
       fade->in_out = false;
    }
 
@@ -161,6 +194,7 @@ static void ws2812_fade_cb(void)
    ws->r = patterns[fade->cur_pattern][0] * fade->cur_m;
    ws->g = patterns[fade->cur_pattern][1] * fade->cur_m;
    ws->b = patterns[fade->cur_pattern][2] * fade->cur_m;
+   UPDATE_BRIGHTNESS();
    ws2812_doit();
 
    if (fade->in_out)
@@ -198,6 +232,7 @@ void ws2812_anim_init(uint8_t anim_type)
          fade->cur_m = 0;
          fade->cur_pattern = 0;
          fade->in_out = true;
+         fade->period = 5.0; // seconds
          ws2812_timer_arg = WS2812_ANIM_FADE_INOUT;
       } break;
 
@@ -208,7 +243,12 @@ void ws2812_anim_init(uint8_t anim_type)
    }
 
    ws2812_clear();
-   os_timer_arm(&ws2812_timer, 10UL, true);
+   os_timer_arm(&ws2812_timer, MS_DIV_PER_CB(fade->period, 255), true);
+}
+
+void ws2812_set_brightness(uint8_t b)
+{
+   ws->brightness = b;
 }
 
 /* Stop currently running animation, if any. */
@@ -261,6 +301,8 @@ bool ws2812_init(void)
       NODE_DBG("ws2812_spi_init ok\n");
       ws2812_clear();
    }
+
+   ws->brightness = INITIAL_BRIGHTNESS;
 
    driver_event_register_ws(ws);
 
