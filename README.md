@@ -126,20 +126,25 @@ make flash
 
 ### WS2812
 
-|  WS2812  |  ESP-12E  |
-|:--------:|:---------:|
-|   +5V    |    N/C    |
-|   GND    |    GND    |
-|  Data    | GPIO13 (MOSI) |
+Connect Data pin to MOSI.
+
+|  WS2812  | ESP-12E | NodeMCU |
+|:--------:|:-------:|:-------:|
+|   +5V    |   N/C   |   N/C   |
+|   GND    |   GND   |   GND   |
+|  Data    |  GPIO13 |    D7   |
 
 ### 1-wire/DS18B20
 
-| DS18B20 |   ESP-12E   |
-|:-------:|:-----------:|
-| DIO     | GPIO4       |
-| DIO     | 4.7K PULLUP |
-| GND     | GND         |
-| VDD     | GND **see note** |
+4.7K pullup on data line. GPIO4 used as default, but any readable I/O should
+work.
+
+| DS18B20 |   ESP-12E   | NodeMCU |
+|:-------:|:-----------:|:-------:|
+| DIO     | GPIO4       |    D2   |
+| DIO     | 4.7K PULLUP |   <--   |
+| GND     | GND         |   <--   |
+| VDD     | GND **see note** | <-- |
 
 **NOTE**: If using parasitic power for onewire, tie DS18B20 VDD to GND. Other-
 wise, route to +3.3V rail. As it stands, parasitic power is not supported. To

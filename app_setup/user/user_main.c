@@ -249,7 +249,7 @@ void setup_init(void)
 
 #ifdef EN_WS8212_HPSI
    ws2812_init();
-   ws2812_fade_init();
+   ws2812_anim_init(WS2812_ANIM_FADE_INOUT);
 #endif
 
 #ifdef DEVELOP_VERSION

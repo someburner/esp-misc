@@ -1,6 +1,6 @@
 /* ========================================================================== *
- *                               Setup Events                                 *
- *                Handles various events, connects transports.                *
+ *                               Driver Events                                *
+ *               Handles Onewire & WS2812 events, from hw_timer.              *
  * -------------------------------------------------------------------------- *
  *         Copyright (C) Jeff Hufford - All Rights Reserved. License:         *
  *                   "THE BEER-WARE LICENSE" (Revision 42):                   *

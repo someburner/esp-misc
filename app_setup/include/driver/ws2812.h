@@ -1,11 +1,23 @@
+/* ========================================================================== *
+ *                               WS2812 Header                                *
+ *  Contains presets and struct definitions for driving the WS2812 via HSPI.  *
+ * -------------------------------------------------------------------------- *
+ *         Copyright (C) Jeff Hufford - All Rights Reserved. License:         *
+ *                   "THE BEER-WARE LICENSE" (Revision 42):                   *
+ * Jeff Hufford (jeffrey92<at>gmail.com) wrote this file. As long as you      *
+ * retain this notice you can do whatever you want with this stuff. If we     *
+ * meet some day, and you think this stuff is worth it, you can buy me a beer *
+ * in return.                                                                 *
+ * ========================================================================== */
 #ifndef _WS2812_h
 #define _WS2812_h
 
 #define PIXEL_COUNT 32
 
-#define WS2812_ANIM_NONE       0
+#define WS2812_ANIM_INVALID    0
 #define WS2812_ANIM_FADE_INOUT 1
-#define WS2812_ANIM_MAX        2
+#define WS2812_ANIM_COLOR_ONLY 2
+#define WS2812_ANIM_MAX        3
 
 typedef void (*ws2812_cb_t)(void);
 
@@ -45,9 +57,9 @@ void ws2812_colorTransition(  uint8_t from_r, uint8_t from_g, uint8_t from_b,
 
 void ws2812_doit(void);
 
-void ws2812_fade_init(void);
+void ws2812_anim_init(uint8_t anim_type);
 void ws2812_showit_fade(void);
-void ws2812_fade_stop(void);
+void ws2812_anim_stop(void);
 
 void ws2812_show(void);
 void ws2812_clear(void);

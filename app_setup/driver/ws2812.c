@@ -1,3 +1,20 @@
+/* ========================================================================== *
+ *                       WS2812 Driver Implementations                        *
+ *            Drives WS2812 LED strip connected to MISO using HSPI.           *
+ * -------------------------------------------------------------------------- *
+ *         Copyright (C) Jeff Hufford - All Rights Reserved. License:         *
+ *                   "THE BEER-WARE LICENSE" (Revision 42):                   *
+ * Jeff Hufford (jeffrey92<at>gmail.com) wrote this file. As long as you      *
+ * retain this notice you can do whatever you want with this stuff. If we     *
+ * meet some day, and you think this stuff is worth it, you can buy me a beer *
+ * in return.                                                                 *
+ * ========================================================================== */
+ /* Basic concepts derived from:
+  + http://www.gammon.com.au/forum/?id=13357
+  + https://wp.josh.com/2014/05/13/ws2812-neopixels-are-not-so-finicky-once-you-get-to-know-them/
+*/
+
+
 #include "user_config.h"
 #include "osapi.h"
 #include "mem.h"
@@ -24,10 +41,6 @@ static ws2812_fade_inout_t * fade = &fade_st;
 os_timer_t ws2812_timer;
 static uint32_t ws2812_timer_arg = 0;
 
-static uint8_t cur_m = 0;
-static uint8_t cur_pattern = 0;
-static bool fade_in_out = true;
-
 float patterns [] [3] = {
   { 1, 0, 0 },  // red
   { 0, 1, 0 },  // green
@@ -40,20 +53,21 @@ float patterns [] [3] = {
   { 46.0 / 256, 139.0 / 256, 87.0 / 256 },  // sea green
 };
 
-/* 40MHz:
- * 25ns per clock period
- * 2*25 = 50ns per spi bit
- * So for a zero-bit to have a 350ns pulse-width:
- *    -> do 7x1-bit = 7x50ns = 350ns
- *    -> do 16x0-bit = 16x50ns = 800ns
- *    -> Which means dout = b1111111 0000000000000000 = 0x3FFF000
- *       and total bits to write is 16+7 = 23
- *
- * So for a one-bit to have a 700ns pulse-width:
- *    -> do 14x1-bit = 14x50ns = 700ns
- *    -> do 12x0-bit = 12x50ns = 600ns
- *    -> Which means dout = b 11111111111111 000000000000 = 0x3FFF000
- *       and total bits to write is 14+12 = 26 bits
+/* 40MHz Computation:                                                         *
+ * -------------------------------------------------------------------------- *
+ * 25ns per clock period                                                      *
+ * 2*25 = 50ns per spi bit                                                    *
+ * So for a zero-bit to have a 350ns pulse-width:                             *
+ *    -> do 7x1-bit = 7x50ns = 350ns                                          *
+ *    -> do 16x0-bit = 16x50ns = 800ns                                        *
+ *    -> Which means dout = b1111111 0000000000000000 = 0x3FFF000             *
+ *       and total bits to write is 16+7 = 23                                 *
+ *                                                                            *
+ * So for a one-bit to have a 700ns pulse-width:                              *
+ *    -> do 14x1-bit = 14x50ns = 700ns                                        *
+ *    -> do 12x0-bit = 12x50ns = 600ns                                        *
+ *    -> Which means dout = b 11111111111111 000000000000 = 0x3FFF000         *
+ *       and total bits to write is 14+12 = 26 bits                           *
 */
 void ICACHE_RAM_ATTR ws2812_sendByte(uint8_t b)
 {
@@ -85,20 +99,17 @@ void ws2812_sendPixels()
    ws2812_sendByte(ws->r);
    ws2812_sendByte(ws->b);
    ets_intr_unlock();
-}
 
-#if 0
-// Display a single color on the whole string
-void ws2812_showColor(uint16_t count, uint8_t r , uint8_t g , uint8_t b)
-{
+#if 0 /* Original blocking code */
+   ws2812_showColor(uint16_t count, uint8_t r , uint8_t g , uint8_t b)
    uint16_t pixel;
    ets_intr_lock(); /* These seem to be OK */
    for (pixel = 0; pixel < count; pixel++)
       ws2812_sendPixel (r, g, b);
    ets_intr_unlock(); /* These seem to be OK */
    ws2812_show();  // latch the colors
-}
 #endif
+}
 
 void ws2812_showit_fade(void)
 {
@@ -111,6 +122,7 @@ void ws2812_showit_fade(void)
    }
 }
 
+/* Called from Driver_Event_Task */
 void ws2812_doit(void)
 {
    switch (ws->cur_anim)
@@ -125,35 +137,8 @@ void ws2812_doit(void)
    }
 }
 
-#if 0
-void ws2812_colorTransition(  uint8_t from_r, uint8_t from_g, uint8_t from_b,
-                              uint8_t to_r,   uint8_t to_g,   uint8_t to_b)
-{
-   // draw one more of the desired colour, each time around the loop
-   uint16_t iteration;
-   for (iteration = 0; iteration < PIXEL_COUNT; iteration++)
-   {
-      // ets_intr_lock(); /* will crash eventually */
-      uint16_t pixel;
-      for (pixel = 0; pixel < PIXEL_COUNT; pixel++)
-      {
-         if (pixel < iteration)
-            ws2812_sendPixel (to_r, to_g, to_b);
-         else
-            ws2812_sendPixel (from_r, from_g, from_b);
-      }
-      // ets_intr_unlock(); /* will crash eventually */
-      ws2812_show();
-   }
-}
-#endif
-
-void ws2812_show(void)
-{
-   os_delay_us(9);
-}
-
-static void ws2812_timer_cb(void* arg)
+/* Callback specifically for fade animation */
+static void ws2812_fade_cb(void)
 {
    if (fade->cur_pattern >= (ARRAY_SIZE(patterns)-1))
    {
@@ -184,24 +169,72 @@ static void ws2812_timer_cb(void* arg)
       fade->cur_m--;
 }
 
-void ws2812_fade_init(void)
+/* Timer callback every 10ms for updating colors. */
+static void ws2812_timer_cb(void* arg)
 {
-   ws->cur_anim = WS2812_ANIM_FADE_INOUT;
+   uint32_t anim_type = *(uint32_t *)arg;
 
-   fade->cur_m = 0;
-   fade->cur_pattern = 0;
-   fade->in_out = true;
+   switch (anim_type)
+   {
+      case WS2812_ANIM_FADE_INOUT:
+      {
+         ws2812_fade_cb();
+      } break;
+
+   }
+
+}
+
+/* Initialize/start a preset animation */
+void ws2812_anim_init(uint8_t anim_type)
+{
+   os_timer_disarm(&ws2812_timer);
+
+   switch (anim_type)
+   {
+      case WS2812_ANIM_FADE_INOUT:
+      {
+         ws->cur_anim = WS2812_ANIM_FADE_INOUT;
+         fade->cur_m = 0;
+         fade->cur_pattern = 0;
+         fade->in_out = true;
+         ws2812_timer_arg = WS2812_ANIM_FADE_INOUT;
+      } break;
+
+      default:
+         NODE_DBG("Invalid anim_type\n");
+         ws2812_clear();
+         return;
+   }
 
    ws2812_clear();
    os_timer_arm(&ws2812_timer, 10UL, true);
 }
 
-void ws2812_fade_stop(void)
+/* Stop currently running animation, if any. */
+void ws2812_anim_stop(void)
 {
    ws2812_clear();
    os_timer_disarm(&ws2812_timer);
-   ws->cur_anim = WS2812_ANIM_NONE;
-   fade = NULL;
+   ws->cur_anim = WS2812_ANIM_INVALID;
+}
+
+/* Used for init only since hw_timer delay is 10us, so about the same. */
+void ws2812_show(void)
+{
+   os_delay_us(9);
+}
+
+void ws2812_clear(void)
+{
+   /* Set all to 0 */
+   ws->r = 0;
+   ws->g = 0;
+   ws->b = 0;
+
+   ws2812_show(); // in case MOSI went high, latch in whatever-we-sent
+   ws2812_sendPixels();
+   ws2812_show();
 }
 
 bool ws2812_spi_init(void)
@@ -220,17 +253,6 @@ bool ws2812_spi_init(void)
 
    return true;
 }
-void ws2812_clear(void)
-{
-   // Change to 0s
-   ws->r = 0;
-   ws->g = 0;
-   ws->b = 0;
-
-   ws2812_show(); // in case MOSI went high, latch in whatever-we-sent
-   ws2812_sendPixels();
-   ws2812_show();
-}
 
 bool ws2812_init(void)
 {
@@ -244,12 +266,34 @@ bool ws2812_init(void)
 
    os_timer_disarm(&ws2812_timer);
    os_timer_setfn(&ws2812_timer, (os_timer_func_t *) ws2812_timer_cb, &ws2812_timer_arg);
-   // os_timer_arm(&ws2812_timer, 10UL, true);
 
    return true;
 }
 
 
+
+#if 0
+void ws2812_colorTransition(  uint8_t from_r, uint8_t from_g, uint8_t from_b,
+                              uint8_t to_r,   uint8_t to_g,   uint8_t to_b)
+{
+   // draw one more of the desired colour, each time around the loop
+   uint16_t iteration;
+   for (iteration = 0; iteration < PIXEL_COUNT; iteration++)
+   {
+      // ets_intr_lock(); /* will crash eventually */
+      uint16_t pixel;
+      for (pixel = 0; pixel < PIXEL_COUNT; pixel++)
+      {
+         if (pixel < iteration)
+            ws2812_sendPixel (to_r, to_g, to_b);
+         else
+            ws2812_sendPixel (from_r, from_g, from_b);
+      }
+      // ets_intr_unlock(); /* will crash eventually */
+      ws2812_show();
+   }
+}
+#endif
 
 
 
