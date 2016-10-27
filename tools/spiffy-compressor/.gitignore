@@ -1,0 +1,40 @@
+# binaries
+spiffy_rom.bin
+*.bin
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+*.exe
+*.d
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+spiffy/spiffy
+
+# Debug files
+*.dSYM/
+html_compressed/

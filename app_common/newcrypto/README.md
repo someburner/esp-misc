@@ -1,0 +1,32 @@
+
+https://munacl.cryptojedi.org/atmega.shtml
+https://github.com/mwarning/libsodium-example/blob/master/crypto_box.c
+
+crypto_auth = crypto_auth_hmacsha512256
+crypto_box = crypto_box_curve25519xsalsa20poly1305
+crypto_box_keypair = crypto_box_curve25519xsalsa20poly1305_keypair
+crypto_box_open = crypto_box_curve25519xsalsa20poly1305_open
+crypto_box_beforenm = crypto_box_curve25519xsalsa20poly1305_beforenm
+crypto_box_afternm = crypto_box_curve25519xsalsa20poly1305_afternm
+crypto_box_open_afternm = crypto_box_curve25519xsalsa20poly1305_open_afternm
+crypto_core = crypto_core_salsa20
+crypto_core_hsalsa20
+crypto_hashblocks = crypto_hash_sha512
+crypto_hash = crypto_hash_sha512
+crypto_onetimeauth = crypto_onetimeauth_poly1305
+crypto_onetimeauth_verify = crypto_onetimeauth_poly1305_verify
+crypto_scalarmult = crypto_scalarmult_curve25519
+crypto_scalarmult_base = crypto_scalarmult_curve25519_base
+crypto_dh = crypto_dh_curve25519
+crypto_dh_keypair = crypto_dh_curve25519_keypair
+crypto_secretbox = crypto_secretbox_xsalsa20poly1303
+crypto_secretbox_open = crypto_secretbox_xsalsa20poly1303_open
+crypto_sign = crypto_sign_ed25519
+crypto_sign_keypair = crypto_sign_ed25519_keypair
+crypto_sign_open = crypto_sign_ed25519_open
+crypto_stream = crypto_stream_xsalsa20
+crypto_stream_xor = crypto_stream_xsalsa20_xor
+crypto_stream_salsa20
+crypto_stream_salsa20_xor
+crypto_verify = crypto_verify16
+crypto_verify32
