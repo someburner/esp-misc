@@ -23,7 +23,6 @@
 
 #include "driver/uart.h"
 #include "driver/uart_register.h"
-// #include "driver/rfm69.h"
 
 #include "main/main_api.h"
 #include "../app_common/util/linked_list.h"
@@ -224,42 +223,6 @@ LOCAL void ICACHE_RAM_ATTR uart0_rx_intr_handler(void *para)
       ETS_UART_INTR_DISABLE();
       uart_recvTask(NULL);
    }
-}
-
-/******************************************************************************
- * FunctionName : uart_init
- * Description  : user interface for init uart
- * Parameters   : UartBautRate uart0_br - uart0 bautrate
- *                UartBautRate uart1_br - uart1 bautrate
- * Returns      : NONE
-*******************************************************************************/
-void uart_init(UartBautRate uart0_br, UartBautRate uart1_br)
-{
-   UartDev.baut_rate = uart0_br;
-   uart_config(UART0);
-   UartDev.baut_rate = uart1_br;
-   uart_config(UART1);
-   ETS_UART_INTR_ENABLE();
-
-   os_install_putc1(uart0_write_char_no_wait);
-
-   /*option 1: use default print, output from uart0 , will wait some time if fifo is full */
-   //do nothing...
-
-   /*option 2: output from uart1,uart1 output will not wait , just for output debug info */
-   /*os_printf output uart data via uart1(GPIO2)*/
-   //os_install_putc1((void *)uart1_write_char);    //use this one to output debug information via uart1 //
-
-   /*option 3: output from uart0 will skip current byte if fifo is full now... */
-   /*see uart0_write_char_no_wait:you can output via a buffer or output directly */
-   /*os_printf output uart data via uart0 or uart buffer*/
-   //os_install_putc1((void *)uart0_write_char_no_wait);  //use this to print via uart0
-}
-
-void uart_reattach()
-{
-   //  uart_init(BIT_RATE_115200, BIT_RATE_115200);
-   uart_init(BIT_RATE_921600, BIT_RATE_921600);
 }
 
 /******************************************************************************
@@ -516,4 +479,44 @@ void UART_SetPrintPort(uint8 uart_no)
       /*option 2: wait for a while if uart fifo is full*/
       os_install_putc1(uart0_write_char);
    }
+}
+
+/******************************************************************************
+ * FunctionName : uart_init
+ * Description  : user interface for init uart
+ * Parameters   : UartBautRate uart0_br - uart0 bautrate
+ *                UartBautRate uart1_br - uart1 bautrate
+ * Returns      : NONE
+*******************************************************************************/
+void uart_init(UartBautRate uart0_br, UartBautRate uart1_br, uint8 print_no)
+{
+   UartDev.baut_rate = uart0_br;
+   uart_config(UART0);
+   UartDev.baut_rate = uart1_br;
+   uart_config(UART1);
+   ETS_UART_INTR_ENABLE();
+
+   if(print_no==1)
+   {
+      os_install_putc1(uart1_write_char);
+   }
+   else
+   {
+      /*option 1: do not wait if uart fifo is full,drop current character*/
+      os_install_putc1(uart0_write_char_no_wait);
+      /*option 2: wait for a while if uart fifo is full*/
+      // os_install_putc1(uart0_write_char);
+   }
+
+   /*option 1: use default print, output from uart0 , will wait some time if fifo is full */
+   //do nothing...
+
+   /*option 2: output from uart1,uart1 output will not wait , just for output debug info */
+   /*os_printf output uart data via uart1(GPIO2)*/
+   //os_install_putc1((void *)uart1_write_char);    //use this one to output debug information via uart1 //
+
+   /*option 3: output from uart0 will skip current byte if fifo is full now... */
+   /*see uart0_write_char_no_wait:you can output via a buffer or output directly */
+   /*os_printf output uart data via uart0 or uart buffer*/
+   //os_install_putc1((void *)uart0_write_char_no_wait);  //use this to print via uart0
 }

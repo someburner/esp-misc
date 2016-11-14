@@ -25,7 +25,7 @@
 /* Keeps track of the current state of the HW timer. The wrapper methods      *
  * available through hw_timer.h use this to ensure everything is okay before  *
  * arming/disarming/changing callbacks. Otherwise we'd crash most likely.     */
-static hw_timer_state = HW_TIMER_DISABLED;
+static HW_TIMER_STATE_T hw_timer_state = HW_TIMER_DISABLED;
 static int autoload_en = false;
 
 /*******************************************************************************
@@ -172,6 +172,7 @@ void hw_timer_init(FRC1_TIMER_SOURCE_TYPE source_type, u8 req)
       ETS_FRC_TIMER1_INTR_ATTACH(hw_timer_isr_cb, NULL);
    }
    hw_timer_state = HW_TIMER_INIT;
+   os_printf("hw_timer: 10us = %u\n", US_TO_RTC_TIMER_TICKS(10U));
    os_printf("hw_timer en: auto=%d\n", autoload_en);
 
    TM1_EDGE_INT_ENABLE();

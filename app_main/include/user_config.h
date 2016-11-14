@@ -14,11 +14,20 @@
 
 // #define EN_TEMP_SENSOR
 
+/* Uncomment if scanner TX is connected to ESP RX */
+#define SCANNER_ATTACHED
+
 #ifdef EN_TEMP_SENSOR
    #define ONEWIRE_PIN              5 // GPIO5
    #define ONEWIRE_NONBLOCKING 1
 #else
    #define ONEWIRE_NONBLOCKING 0
+#endif
+
+#ifdef SCANNER_ATTACHED
+   #define USE_RX_FOR_SCAN 1
+#else
+   #define USE_RX_FOR_SCAN 0
 #endif
 
 /* ========================================================================== *
@@ -27,8 +36,16 @@
 /* Global enable/disable of debug prints */
 #define DEVELOP_VERSION
 
-/* Default UART buadrate */
-#define BIT_RATE_DEFAULT         BIT_RATE_921600  // 115200, 921600
+/* Default UART buadrate: 115200, 921600, etc */
+#if USE_RX_FOR_SCAN
+   #define UART0_BIT_RATE_DEFAULT BIT_RATE_115200 // must use 115200 for scanner
+   #define UART1_BIT_RATE_DEFAULT BIT_RATE_921600 // debug- fastest
+   #define DEBUG_UART       1 // debug on UART 1 to not interfere with scanner
+#else
+   #define UART0_BIT_RATE_DEFAULT BIT_RATE_921600 // fastest
+   #define UART1_BIT_RATE_DEFAULT BIT_RATE_921600 // fastest
+   #define DEBUG_UART       0 // debug on UART 0 by default
+#endif
 
 /* Defines a custom hostname */
 #define USER_HOSTNAME            "misc-gw"
@@ -69,8 +86,6 @@
 /*******************************************************************************
  * Miscellaneous
 *******************************************************************************/
-#define DEBUG_UART 0 //debug on uart 0 or 1
-
 #define BUILD_SPIFFS	1
 
 /* ------------------------------ Linker/Memory ----------------------------- */

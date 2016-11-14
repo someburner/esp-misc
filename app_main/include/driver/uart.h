@@ -144,7 +144,6 @@ typedef struct {
     int                      buff_uart_no;  //indicate which uart use tx/rx buffer
 } UartDevice;
 
-void uart_init(UartBautRate uart0_br, UartBautRate uart1_br);
 void uart_write_string(uint8_t uart,const char *s);
 void uart0_sendStr(const char *str);
 
@@ -208,5 +207,7 @@ void UART_SetIntrEna(uint8 uart_no,uint32 ena_mask);
 void UART_SetPrintPort(uint8 uart_no);
 bool UART_CheckOutputFinished(uint8 uart_no, uint32 time_out_us);
 //==============================================
+
+void uart_init(UartBautRate uart0_br, UartBautRate uart1_br, uint8 print_no);
 
 #endif

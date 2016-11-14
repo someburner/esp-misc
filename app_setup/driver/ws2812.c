@@ -29,7 +29,7 @@
 
 #define SPI_DEV HSPI
 #define REFRESH_RATE 1000UL
-#define INITIAL_BRIGHTNESS 64
+#define INITIAL_BRIGHTNESS 128
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 

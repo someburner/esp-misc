@@ -168,8 +168,8 @@ typedef struct
 
    char *         universal_sub;
 
-   char *         test_sub;
    char *         test_pub;
+   char *         test_sub;
 
    char *         log_pub_topic;
 

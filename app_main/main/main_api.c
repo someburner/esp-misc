@@ -128,7 +128,7 @@ char * gen_rand_num_string(int len)
 
 bool main_api_test(char * buf, int len)
 {
-   return mqtt_api_pub_temp(buf, len);
+   return mqtt_api_pub_test(buf, len);
 }
 
 /* ------------------------------- Messaging -------------------------------- */

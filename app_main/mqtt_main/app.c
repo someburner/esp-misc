@@ -69,6 +69,7 @@ static void mqttConnectedTestCb(uint32_t *args)
 	NODE_DBG("MQTT: Connected (test: start timer)\n");
    if (MQTT_Subscribe(client, main_mqtt->test_sub, 1))
    {
+      mqtt_api_pub_test("Hello!", 6);
       main_api_update_conn_state(MAIN_CONN_MQTT);
    }
 }
@@ -105,7 +106,7 @@ bool mqtt_api_pub_log(char * msg, int len)
    return true;
 }
 
-bool mqtt_api_pub_temp(char * msg, int len)
+bool mqtt_api_pub_test(char * msg, int len)
 {
    NODE_DBG("mqtt_pub_device to %s\n", main_mqtt->test_pub);
    return MQTT_Publish(&mqtt_client, main_mqtt->test_pub, msg, len, 1, 0);
@@ -154,8 +155,9 @@ void mqtt_app_init(MAIN_MQTT_T * main_mqtt_ptr)
 	MQTT_InitClient(&mqtt_client, (uint8_t*)MQTT_CLIENT_ID, MAIN_MQTT_USER, MAIN_MQTT_PASS, MQTT_KEEPALIVE, 1); //last bit sets cleanSession flag
 	MQTT_InitLWT(&mqtt_client, "/lwt", "offline-1235", 0, 0);
 
-
+#ifdef MAIN_INC_TEST_TOPICS
    mqtt_attach_test_cbs();
+#endif
 
 	MQTT_OnDisconnected(&mqtt_client, mqttDisconnectedCb);
 	MQTT_OnPublished(&mqtt_client, mqttPublishedCb);

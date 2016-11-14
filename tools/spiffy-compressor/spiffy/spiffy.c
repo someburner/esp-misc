@@ -254,9 +254,6 @@ int main(int argc, char **argv)
 #if STA_PASS_EN==1
    PRINT_OUT("PW Enabled\n");
 #endif
-#ifdef RFM69_ENCRYPT_KEY
-   PRINT_OUT("%s (len=%lu)\n", RFM69_ENCRYPT_KEY, strlen(RFM69_ENCRYPT_KEY));
-#endif
    int sz;
    uint8_t *buf;
 

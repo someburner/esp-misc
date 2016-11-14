@@ -26,9 +26,6 @@ endif
 STD_CFLAGS=-std=gnu11 -Wimplicit # -Wunused-variable -Werror
 
 EXTRA_CCFLAGS += \
-	-DRFM69_NODE_ID=$(RFM69_NODE_ID) \
-	-DRFM69_ENCRYPT_KEY=$(RFM69_ENCRYPT_KEY) -DRFM69_NET_ID=$(RFM69_NET_ID) \
-	-DRFM69_FREQ=$(RFM69_FREQ) -DRFM69_DEV_ID=$(RFM69_DEV_ID) \
 	-DSTA_PASS="$(STA_PASS)" -DSTA_SSID="$(STA_SSID)" -DVERSION="$(VERSION)"
 
 #############################################################

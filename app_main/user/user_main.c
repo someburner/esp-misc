@@ -28,6 +28,7 @@
 #include "driver/gpio16.h"
 #include "driver/uart.h"
 
+#include "main_event.h"
 #include "mqtt_api.h"
 
 /* Must be defined after SDK stuff */
@@ -149,7 +150,6 @@ static void config_wifi()
    if (wifi_station_dhcpc_status() != DHCP_STARTED)
       { wifi_station_dhcpc_start(); }
    wifi_station_connect();
-   // arm_reconnect_timer(1023);
 }
 
 static void mount(int fs, bool force)
@@ -211,11 +211,15 @@ void main_init(void)
    NODE_DBG("Loading Makefile WiFi settings\n");
    config_wifi();
 
+   main_app_init(orig_mac);
+
+
    /* This should always be called. If WiFi is -not- already configured, then *
     * we should still arm this timer as it checks if the WiFi reset button is *
     * being held. Otherwise, if we do have WiFi configured, this timer checks *
     * that we have an IP and SNTP timestamp.                                  */
-   // arm_reconnect_timer(1011);
+   arm_reconnect_timer(1011);
+
 
 #ifdef DEVELOP_VERSION
    os_memset(&heapTimer,0,sizeof(os_timer_t));
@@ -294,8 +298,7 @@ void user_init(void)
    /* Obtain UUID from station interface right away just in case */
    wifi_get_macaddr(STATION_IF, orig_mac);
 
-   uart_init(BIT_RATE_921600,BIT_RATE_921600);
-   // uart_init(BIT_RATE_DEFAULT,BIT_RATE_DEFAULT);
+   uart_init(UART0_BIT_RATE_DEFAULT,UART1_BIT_RATE_DEFAULT, DEBUG_UART);
 #ifndef NODE_DEBUG
     system_set_os_print(0);
 #else

@@ -8,7 +8,6 @@
 ESPTOOL2_SRC_DIR = $(PROJ_ROOT)tools/esptool2_src/src
 ESPTOOL2 ?= ../tools/esptool2
 
-
 SPI_SIZE    ?= 4M
 SPI_SPEED   ?= 80
 SPI_MODE    ?= qio
@@ -16,18 +15,10 @@ SPI_MODE    ?= qio
 RBOOT_BUILD_BASE ?= build
 RBOOT_FW_BASE    ?= firmware
 
-OPENSDK_ROOT ?= /your/path/to/esp-open-sdk-1.5.4.1
+include ../config.mk
 
-XTENSA_TOOLS_ROOT ?= $(OPENSDK_ROOT)/xtensa-lx106-elf/bin/
-XTENSA_BINDIR ?= $(XTENSA_TOOLS_ROOT)
-
-ifndef XTENSA_BINDIR
-CC := xtensa-lx106-elf-gcc
-LD := xtensa-lx106-elf-gcc
-else
-CC := $(addprefix $(XTENSA_BINDIR)/,xtensa-lx106-elf-gcc)
-LD := $(addprefix $(XTENSA_BINDIR)/,xtensa-lx106-elf-gcc)
-endif
+CC := $(addprefix $(XTENSA_TOOLS_ROOT)/,xtensa-lx106-elf-gcc)
+LD := $(addprefix $(XTENSA_TOOLS_ROOT)/,xtensa-lx106-elf-gcc)
 
 ifeq ($(V),1)
 Q :=

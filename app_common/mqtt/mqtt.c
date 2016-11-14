@@ -688,7 +688,7 @@ void MQTT_InitConnection(MQTT_Client *mqttClient, uint8_t* host, uint32_t port, 
 void MQTT_InitClient(MQTT_Client *mqttClient, uint8_t* client_id, uint8_t* client_user, uint8_t* client_pass, uint32_t keepAliveTime, uint8_t cleanSession)
 {
 	uint32_t temp;
-	NODE_DBG("MQTT_InitClientx\n");
+	MQTT_DBG("MQTT_InitClient\n");
 
 	os_memset(&mqttClient->connect_info, 0, sizeof(mqtt_connect_info_t));
 

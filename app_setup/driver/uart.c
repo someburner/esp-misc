@@ -21,12 +21,12 @@
 #include "mem.h"
 #include "user_config.h"
 
-#include "driver/uart.h"
-#include "driver/uart_register.h"
-// #include "driver/rfm69.h"
+#include "../app_common/util/linked_list.h"
 
 #include "setup/setup_api.h"
-#include "../app_common/util/linked_list.h"
+
+#include "driver/uart_register.h"
+#include "driver/uart.h"
 
 extern UartDevice UartDev;
 

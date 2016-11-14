@@ -1,190 +1,54 @@
 #  copyright (c) 2010 Espressif System
 #
+# Should not need to be changed except for:
+#  + verbosity
+#  + changes required to build on non-linux platform(s)
+#  + changes required due to changes in relative path structure
+#
+# copyright (c) 2010 Espressif System
+#
 .NOTPARALLEL:
 ifndef PDIR
 
 endif
 
+# Top dir of current makefile
 TOP_DIR:=$(dir $(lastword $(MAKEFILE_LIST)))
 
-HOST=$(shell hostname)
-
-OPENSDK_ROOT ?= /your/path/to/esp-open-sdk-1.5.4.1
-
-# Base directory for the compiler
-XTENSA_TOOLS_ROOT ?= $(OPENSDK_ROOT)/xtensa-lx106-elf/bin/
-SDK_ROOT ?= $(OPENSDK_ROOT)/sdk/
+# Static absolute path of root project folder
 PROJ_ROOT = $(abspath $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))/
 
-LDFLAGS:= -L$(TOP_DIR)sdk-overrides/lib -L$(SDK_DIR)/lib -L$(SDK_DIR)/ld $(LDFLAGS)
+# Load various user-defined config options
+include $(TOP_DIR)config.mk
 
 #############################################################
-# MQTT Options
+# Relative project paths (required)
 #############################################################
-
-# MQTT Protocol Version
-# 311 = v3.1.1 - Compatible with paho-mqtt
-MQTT_PROTOCOL_VER  ?= 311
-
-#############################################################
-# SPIFFS Options
-#############################################################
-# Location of FS0 start
-# This is also the location esptool will flash with the
-# created spiffy ROM if flash spiffy is set
-SPIFFS0_ADDR       ?= 0x302000
-
-# Size of Spiffy / FS0. Must be same as spiffy_rom.bin if flashing SPIFFS0_ADDR
-SPIFFS0_SIZE       ?= 0x10000
-
-# Location of FS1 start (aka "dynamic" fs)
-# This is meant to be used for temporary storage of files
-# Do not flash over this area of memory
-SPIFFS1_ADDR       ?= 0x312000
-
-# Size of DYNFS / FS1. Must be set correctly.
-SPIFFS1_SIZE       ?= 0x50000
-
-#############################################################
-# Shortcuts to do everything
-#############################################################
-# Make everything?
-MAKE_EVERYTHING  ?= no
-# MAKE_EVERYTHING ?= yes
-
-# Flash Everything?
-FLASH_EVERYTHING ?= no
-# FLASH_EVERYTHING ?= yes
-
-# Compile as un-configured?
-INIT_UNCONFIGURED  ?= no
-# INIT_UNCONFIGURED  ?= yes
-
-ifeq ("$(MAKE_EVERYTHING)","yes")
-GEN_SPIFFY_ROM     ?= yes
-MK_SPIFFY          ?= yes
-MK_RCONF           ?= yes
-endif
-
-ifeq ("$(FLASH_EVERYTHING)","yes")
-FLASH_CAL_SECT     ?= yes
-FLASH_INIT_DEFAULT ?= yes
-FLASH_BLANK        ?= yes
-FLASH_RBOOT        ?= yes
-FLASH_RCONF        ?= yes
-FLASH_ROM0         ?= yes
-FLASH_ROM1         ?= yes
-FLASH_ROM2         ?= yes
-FLASH_ROM3         ?= yes
-FLASH_SPIFFY0      ?= yes
-endif
-
-# Start out in setup rom if unconfigured = true
-ifeq ("$(INIT_UNCONFIGURED)", "yes")
-   ROM_TO_BOOT ?= 0
-endif
-#############################################################
-# Flash Options (SDK)
-#############################################################
-# Flash Cal sector?
-# FLASH_CAL_SECT  ?= no
-FLASH_CAL_SECT ?= yes
-CAL_SECT_ADDR  ?= 0x3FB000
-
-#Flash esp_init_data_default?
-# FLASH_INIT_DEFAULT  ?= no
-FLASH_INIT_DEFAULT ?= yes
-
-#Flash blank.bin?
-FLASH_BLANK    ?= no
-# FLASH_BLANK    ?= yes
-
-#############################################################
-# Flash Options (Programs)
-#############################################################
-# Choose which rom to boot if flashing rconf
-ROM_TO_BOOT        ?= 0
-
-# Choose which roms to flash
-FLASH_RBOOT        ?= yes
-FLASH_RCONF        ?= yes
-FLASH_ROM0         ?= yes
-FLASH_ROM1         ?= no
-FLASH_ROM2         ?= no
-FLASH_ROM3         ?= no
-
-# Choose to flash a blank to sector 1.
-# Causes rBoot to recreate conf w defaults.
-FLASH_RCONF_BLANK  ?= no
-
-# Specify names of each rom
-RBOOT_NAME         ?= rboot.bin
-RCONF_NAME         ?= rconf.bin
-ROM0_NAME          ?= misc.app.setup0.bin
-ROM1_NAME          ?= misc.app.setup1.bin
-ROM2_NAME          ?= misc.app.main.bin
-ROM3_NAME          ?= misc.app.main.bin
-
-# Specify rom flash locations
-RBOOT_ADDR         ?= 0x000000
-RCONF_ADDR         ?= 0x001000
-ROM0_ADDR          ?= 0x002000
-ROM1_ADDR          ?= 0x082000
-ROM2_ADDR          ?= 0x102000
-ROM3_ADDR          ?= 0x202000
-
-#############################################################
-# Flash Options (SPIFFS)
-#############################################################
-# Choose which spiffs to flash
-FLASH_SPIFFY0      ?= yes
-# FLASH_SPIFFY0      ?= no
-FLASH_SPIFFY1      ?= no
-
-# Specify names of each spiffs image
-SPIFFY0_NAME       ?= spiffy_rom.bin
-
-# Format FS0/FS1 on boot?
-FORMAT_FS          ?= 0
-FORMAT_DYNFS       ?= 0
-
-#############################################################
-# WiFi Options
-#############################################################
-# Build time Wifi Cfg
-STA_PASS_EN          ?= 1
-
-STA_SSID             ?= \"Your SSID\"
-STA_PASS             ?= your_password
-
-#############################################################
-# Spiffy
-# Usage: make spiffy_img.o
-#############################################################
-# Create a spiffy image?
-# GEN_SPIFFY_ROM ?= yes
-GEN_SPIFFY_ROM ?= no
-
-# MK_SPIFFY ?= yes
-MK_SPIFFY ?= no
-
-VERBOSE = 1
-
+# Source paths to build rboot, esptool2
 RBOOT_SRC_DIR = $(PROJ_ROOT)rboot
 ESPTOOL2_SRC_DIR = $(PROJ_ROOT)tools/esptool2_src/src
 
+# esptool.py & esptool2
+ESPTOOL          ?= $(PROJ_ROOT)tools/esptool.py
+ESPTOOL2         ?= ../tools/esptool2
+
+# absolute path of sdk bin folder
+ESPTOOLMAKE      := $(XTENSA_TOOLS_ROOT)
+
+VERBOSE = 1
+
 V ?= $(VERBOSE)
 ifeq ("$(V)","1")
-Q :=
-QECHO := @true
-VECHO := @echo
-vecho := @true
+Q        :=
+QECHO    := @true
+VECHO    := @echo
+vecho    := @true
 MAKEPDIR :=
 else
-Q := @
-QECHO := @echo
-VECHO := @true
-vecho := @echo
+Q        := @
+QECHO    := @echo
+VECHO    := @true
+vecho    := @echo
 MAKEPDIR := --no-print-directory -s
 endif
 
@@ -198,22 +62,31 @@ ET_FS     ?= 32m  # 32Mbit flash size in esptool flash command
 ET_FF     ?= 80m  # 80Mhz flash speed in esptool flash command
 # ET_BLANK1 ?= 0x1FE000 # where to flash blank.bin to erase wireless settings
 # ESP_INIT1 ?= 0x1FC000 # flash init data provided by espressif
-ET_BLANK ?= 0x3FE000 # where to flash blank.bin to erase wireless settings --- system param area
-ESP_INIT ?= 0x3FC000 # flash init data provided by espressif
-
-#relative path of esptool script
-ESPTOOL              ?= $(PROJ_ROOT)tools/esptool.py
-ESPTOOL2             ?= ../tools/esptool2
+ET_BLANK  ?= 0x3FE000 # where to flash blank.bin to erase wireless settings --- system param area
+ESP_INIT  ?= 0x3FC000 # flash init data provided by espressif
 
 #absolute path of sdk bin folder
 ESPTOOLMAKE          := $(XTENSA_TOOLS_ROOT)
 
-#rBoot Options
+ifndef ESPPORT
+   ESPPORT = not_defined
+endif
+
+#############################################################
+# Top-level compile flags/options
+#############################################################
+# rBoot E2 opts
 RBOOT_E2_SECTS       ?= .text .data .rodata
 RBOOT_E2_USER_ARGS   ?= -bin -boot2 -iromchksum -4096 -$(ET_FM) -80
 
-#rBoot Flags
+# rBoot integration
 CFLAGS               += -DRBOOT_INTEGRATION
+
+# This will tell app_setup/Makefile to use APP_TARGET 0 first
+export FIRST_TARGET = 1
+
+# sdk-overrides ld flags
+LDFLAGS:= -L$(PROJ_ROOT)sdk-overrides/lib -L$(SDK_DIR)/lib -L$(SDK_DIR)/ld $(LDFLAGS)
 
 #############################################################
 # Version Info
@@ -226,15 +99,9 @@ SHA     := $(shell if git diff --quiet HEAD; then git rev-parse --short HEAD | c
 VERSION ?=esp-misc $(BRANCH) - $(DATE) - $(SHA)
 
 #############################################################
-# Select compile (Windows build removed)
+# Select compile (Linux only)
 #############################################################
 
-# Can we use -fdata-sections?
-ifndef COMPORT
-   ESPPORT = /dev/ftdi_esp
-else
-   ESPPORT = $(COMPORT)
-endif
 CCFLAGS += -Os -ffunction-sections -fno-jump-tables -fdata-sections
 AR       := $(XTENSA_TOOLS_ROOT)xtensa-lx106-elf-ar
 CC       := $(XTENSA_TOOLS_ROOT)xtensa-lx106-elf-gcc -I$(PROJ_ROOT)sdk-overrides/include -I$(SDK_ROOT)include
@@ -344,7 +211,7 @@ endif
 ifeq ("$(FLASH_CAL_SECT)","yes")
 FLASH_BINS += $(CAL_SECT_ADDR) $(BINDIR)/blank.bin
 endif
-ifeq ("$(FLASH_INIT_DEFAULT)","yes")
+ifeq ("$(FLASH_INIT_DATA)","yes")
 FLASH_BINS += $(ESP_INIT) $(BINDIR)/esp_init_data_default.bin
 endif
 ifeq ("$(FLASH_BLANK)","yes")
@@ -404,7 +271,7 @@ $(BINODIR)/%.bin: $(IMAGEODIR)/%.out
 # Rules base
 # Should be done in top-level makefile only
 #############################################################
-.PHONY: all .subdirs spiffy spiffy_img.o rboot rconf
+.PHONY: all both .subdirs spiffy spiffy_img.o rboot rconf
 
 ifndef PDIR
 # targets for top level only
@@ -417,7 +284,7 @@ SPIFFY_EXPORTS=-g
 # Add to make command
 OSPIFFY = spiffy
 
-# Pass WiFi and RFM69 parameters to spiffy
+# Pass WiFi parameters to spiffy
 SPIFFY_EXPORTS = -DSTA_SSID="$(STA_SSID)" -DSTA_PASS_EN=$(STA_PASS_EN) \
    -DSTA_PASS="$(STA_PASS)"
 
@@ -444,6 +311,11 @@ LIBMAIN_DST = $(PROJ_ROOT)sdk-overrides/lib/libmain2.a
 endif
 
 all: $(COMMON) .subdirs $(ORCONF) $(OSPIFFY) $(LIBMAIN_DST) $(RBOOT) $(OBJS) $(OLIBS) $(OIMAGES) $(OBINS) $(SPECIAL_MKTARGETS)
+
+# Run through everything once, then unset FIRST_TARGET and do it again
+both: all
+   cd app_setup && $(MAKE) FIRST_TARGET= && cd ..
+    $(Q) $(MAKE) $(MAKEPDIR)
 
 #############################################################
 # SPIFFY targets
@@ -523,15 +395,23 @@ clobber: $(SPECIAL_CLOBBER)
    $(Q) $(RM) -r $(ODIR)
 
 flash:
+ifeq ("$(ESPPORT)","not_defined")
+$(error ESPPORT not defined! Please set in config.mk)
+else
 ifndef PDIR
    $(Q) $(MAKE) $(MAKEPDIR) -C ./app_main flash
 else
    $(Q) $(ESPTOOL) --port $(ESPPORT) --baud $(ESPBAUD) write_flash -fs $(ET_FS) -fm $(ET_FM) -ff $(ET_FF) \
    $(FLASH_BINS)
 endif
+endif
 
 erase:
+ifeq ("$(ESPPORT)","not_defined")
+$(error ESPPORT not defined! Please set in config.mk)
+else
    $(Q) $(ESPTOOL) --port $(ESPPORT) --baud $(ESPBAUD) erase_flash
+endif
 
 .subdirs:
    $(Q) set -e; $(foreach d, $(SUBDIRS), $(MAKE) $(MAKEPDIR) -C $(d);)
@@ -595,7 +475,6 @@ mkesptool2:
    @rm -f ${ESPTOOL2_SRC_DIR}/esptool2
 
 rconf:
-   $(Q) echo "$(HOST)"
    $(Q) $(MAKE) CFLAGS=-DROM_TO_BOOT=$(ROM_TO_BOOT) -C $(PROJ_ROOT)tools/rconf_gen
    $(Q) cp -f ${PROJ_ROOT}tools/rconf_gen/rconf.bin $(PROJ_ROOT)bin/rconf.bin;
 

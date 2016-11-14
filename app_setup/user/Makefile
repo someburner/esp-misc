@@ -50,7 +50,6 @@ INCLUDES += -I ../../include/ets
 INCLUDES += -I ../mqtt_setup
 INCLUDES += -I ../newcrypto
 INCLUDES += -I ../platform
-INCLUDES += -I ../rfm_setup
 INCLUDES += -I ../setup
 INCLUDES += -I ../
 PDIR := ../$(PDIR)

@@ -15,6 +15,7 @@
 #include "queue.h"
 #include "user_config.h"
 
+#include "../app_common/include/server_config.h"
 #include "../app_common/libc/c_stdio.h"
 #include "../app_common/platform/platform.h"
 
@@ -56,7 +57,19 @@ bool main_app_init(uint8_t * orig_mac)
    clientPtr->mqtt = (MAIN_MQTT_T *) os_zalloc(sizeof(MAIN_MQTT_T));
    clientPtr->mqtt->mqtt_buff_avail_cb = NULL;
 
-   /* Initialize Setup APIs */
+#ifdef MAIN_INC_TEST_TOPICS
+   /* Allocate test pub topic */
+   clientPtr->mqtt->test_pub = (char *) os_zalloc(os_strlen(MAIN_TEST_PUB)+1);
+   os_memcpy(clientPtr->mqtt->test_pub, MAIN_TEST_PUB, os_strlen(MAIN_TEST_PUB));
+   NODE_DBG("test_pub: %s\n", clientPtr->mqtt->test_pub);
+
+   /* Allocate test sub topic */
+   clientPtr->mqtt->test_sub = (char *) os_zalloc(os_strlen(MAIN_TEST_SUB)+1);
+   os_memcpy(clientPtr->mqtt->test_sub, MAIN_TEST_SUB, os_strlen(MAIN_TEST_SUB));
+   NODE_DBG("test_sub: %s\n", clientPtr->mqtt->test_sub);
+#endif
+
+   /* Initialize Main Timers */
    main_api_init(clientPtr);
 
    /* Initialize Setup Event Monitor */

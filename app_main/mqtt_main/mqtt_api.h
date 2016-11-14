@@ -13,7 +13,7 @@ void mqtt_app_detach_cbs();
 
 /* ------------------------------ Publish APIs ------------------------------ */
 bool mqtt_api_pub_log(char * msg, int len);
-bool mqtt_api_pub_temp(char * msg, int len);
+bool mqtt_api_pub_test(char * msg, int len);
 
 /* ------------------------------- Utilities -------------------------------- */
 int mqtt_api_buff_len_avail();

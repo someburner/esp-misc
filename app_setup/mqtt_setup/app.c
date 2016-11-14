@@ -154,8 +154,9 @@ void mqtt_app_init(SETUP_MQTT_T * setup_mqtt_ptr)
 	MQTT_InitClient(&mqtt_client, (uint8_t*)MQTT_CLIENT_ID, SETUP_MQTT_USER, SETUP_MQTT_PASS, MQTT_KEEPALIVE, 1); //last bit sets cleanSession flag
 	MQTT_InitLWT(&mqtt_client, "/lwt", "offline-1235", 0, 0);
 
-
+#ifdef SETUP_INC_TEST_TOPICS
    mqtt_attach_test_cbs();
+#endif
 
 	MQTT_OnDisconnected(&mqtt_client, mqttDisconnectedCb);
 	MQTT_OnPublished(&mqtt_client, mqttPublishedCb);

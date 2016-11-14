@@ -8,7 +8,6 @@
 #include "../app_common/rboot/rboot-api.h"
 
 #include "driver/gpio16.h"
-// #include "driver/rfm69.h"
 
 #include "main_cli.h"
 #include "driver/uart.h"

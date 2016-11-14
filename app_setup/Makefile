@@ -13,7 +13,13 @@
 #
 TARGET = misc
 
+# FIRST_TARGET is exported as 0 from top-level Makefile on the first go around.
+# It gets unset before the second make command call so we can assume its 1
+ifndef FIRST_TARGET
+APP_TARGET = 1
+else
 APP_TARGET = 0
+endif
 
 #FLAVOR = release
 FLAVOR = debug

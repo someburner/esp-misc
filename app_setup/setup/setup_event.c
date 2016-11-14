@@ -68,7 +68,6 @@ uint8_t lastwifiStatus_mq = 0; 	//STATION_IDLE
 
 // initial state
 uint8_t wifiState = wifiIsDisconnected;
-uint8_t rfmState =  rfm_unknown;
 
 /* WiFi Failure reasons. See user_interface.h */
 uint8_t wifiReason = 0;
@@ -443,13 +442,6 @@ void statusWifiUpdate(uint8_t state)
       NODE_DBG("Clear discon time\n");
       disconnected_time = 0;
    }
-}
-
-/* change the rfm69 state indication */
-void statusRfmUpdate(uint8_t state)
-{
-   rfmState = state;
-   // schedule an update (don't want to run into concurrency issues)
 }
 
 /* nslookup callback */

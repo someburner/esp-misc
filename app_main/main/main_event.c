@@ -66,7 +66,6 @@ uint8_t lastwifiStatus_mq = 0; 	//STATION_IDLE
 
 // initial state
 uint8_t wifiState = wifiIsDisconnected;
-uint8_t rfmState =  rfm_unknown;
 
 /* WiFi Failure reasons. See user_interface.h */
 uint8_t wifiReason = 0;
@@ -328,42 +327,11 @@ onewire_skip:
          if (main_cli_parse(msgPtr) < 0)
             break;
 
-         if ((ptr = strstr(msgPtr, "blink")) != NULL)
+         if (msgLen >= 2)
          {
-            MAIN_EVENT_DBG("It worked!\n");
-            // toggle_led(LED_PIN_ONBOARD);
-         }
-
-         else if ((ptr = strstr(msgPtr, "rboot")) != NULL)
-         {
-            main_cli_rboot_cmd(msgPtr, msgLen);
-         }
-
-         else if ((ptr = strstr(msgPtr, "show")) != NULL)
-         {
-            main_cli_get_cmd(msgPtr);
-         }
-
-         else if ((ptr = strstr(msgPtr, "flush")) != NULL)
-         {
-            memset(rxBuf, 0, 128);
-         }
-         // else if ((ptr = strstr(msgPtr, "test")) != NULL)
-         // {
-         //    int fd = dynfs_open("my_file", SPIFFS_CREAT | SPIFFS_TRUNC | SPIFFS_RDWR);
-         //    if (dynfs_write(fd, (u8_t *)"Hello world\0", 12) < 0)
-         //       os_printf("errno %i\n", dynfs_errno());
-         //    dynfs_close(fd);
-         //
-         //    fd = dynfs_open("my_file", SPIFFS_RDWR);
-         //    if (dynfs_read(fd, (u8_t *)buf, 12) < 0) os_printf("errno %i\n", dynfs_errno());
-         //    dynfs_close(fd);
-         //    buf[11] = '\0';
-         //    NODE_DBG("--> %s <--\n", buf);
-         // }
-         else
-         {
-            MAIN_EVENT_DBG("\r\ninvalid cmd: %s\n", msgPtr);
+            main_api_test(msgPtr, msgLen);
+            // main_cli_rboot_cmd(msgPtr, msgLen);
+            // memset(rxBuf, 0, 128);
          }
 
       } break;
@@ -441,13 +409,6 @@ void statusWifiUpdate(uint8_t state)
       NODE_DBG("Clear discon time\n");
       disconnected_time = 0;
    }
-}
-
-/* change the rfm69 state indication */
-void statusRfmUpdate(uint8_t state)
-{
-   rfmState = state;
-   // schedule an update (don't want to run into concurrency issues)
 }
 
 /* nslookup callback */

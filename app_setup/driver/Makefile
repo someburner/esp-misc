@@ -15,9 +15,7 @@ ifndef PDIR
 GEN_LIBS = libdriver.a
 endif
 
-EXTRA_CCFLAGS += -DRFM69_FREQ=$(RFM69_FREQ) -DRFM69_NET_ID=$(RFM69_NET_ID) \
-	-DRFM69_NODE_ID=$(RFM69_NODE_ID) -DRFM69_IS_HW=$(RFM69_IS_HW) \
-	-DRFM69_ENCRYPT_KEY=$(RFM69_ENCRYPT_KEY) -DRFM_INTR_PIN=$(RFM_INTR_PIN)
+# EXTRA_CCFLAGS += \
 
 #############################################################
 # Configuration i.e. compile options etc.
@@ -45,7 +43,6 @@ INCLUDES := $(INCLUDES) -I $(PDIR)include
 INCLUDES += -I ./
 INCLUDES += -I ../libc
 INCLUDES += -I ../platform
-INCLUDES += -I ../rfm_setup
 INCLUDES += -I ../
 PDIR := ../$(PDIR)
 sinclude $(PDIR)Makefile

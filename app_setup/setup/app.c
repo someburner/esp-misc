@@ -56,7 +56,19 @@ bool setup_app_init(uint8_t * orig_mac)
    clientPtr->mqtt = (SETUP_MQTT_T *) os_zalloc(sizeof(SETUP_MQTT_T));
    clientPtr->mqtt->mqtt_buff_avail_cb = NULL;
 
-   /* Initialize Setup APIs */
+#ifdef SETUP_INC_TEST_TOPICS
+   /* Allocate test pub topic */
+   clientPtr->mqtt->test_pub = (char *) os_zalloc(os_strlen(SETUP_TEST_PUB)+1);
+   os_memcpy(clientPtr->mqtt->test_pub, SETUP_TEST_PUB, os_strlen(SETUP_TEST_PUB));
+   NODE_DBG("test_pub: %s\n", clientPtr->mqtt->test_pub);
+
+   /* Allocate test sub topic */
+   clientPtr->mqtt->test_sub = (char *) os_zalloc(os_strlen(SETUP_TEST_SUB)+1);
+   os_memcpy(clientPtr->mqtt->test_sub, SETUP_TEST_SUB, os_strlen(SETUP_TEST_SUB));
+   NODE_DBG("test_sub: %s\n", clientPtr->mqtt->test_sub);
+#endif
+
+   /* Initialize Setup Timers */
    setup_api_init(clientPtr);
 
    /* Initialize Setup Event Monitor */
