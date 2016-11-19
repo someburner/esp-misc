@@ -56,13 +56,6 @@ static FILE *rom = 0;
 /*******************************************************************************
  * Populate Settings on SPI Flash
 *******************************************************************************/
-/* ------------------------------ Main Settings ----------------------------- */
-FLAGCFG flagConf =
-{
-   0 // clear all flags
-};
-
-
 //Routines to convert host format to the endianness used in the xtensa
 short htoxs(short in)
 {
@@ -266,7 +259,6 @@ int main(int argc, char **argv)
 	int romsize;
 	romsize = DEFAULT_ROM_SIZE;
 	PRINT_OUT("\nSpiffy main.c begin\n");
-   PRINT_OUT("Using Bridge Version: %u\n", BRIDGE_FW_VERSION);
 	PRINT_OUT("Creating rom '%s' of size 0x%x (%d) bytes.\n", romfile, romsize, romsize);
 	DEBUG(" > %s opened for writing...\n", DEFAULT_ROM_NAME);
 
@@ -298,7 +290,6 @@ int main(int argc, char **argv)
 		PRINT_OUT("Failed to mount spiffs, error %d.\n", res);
 		ret = EXIT_FAILURE;
 	} else {
-      write_to_spiffs(FLAG_CFGNAME,   (uint8_t*)&flagConf,   sizeof(flagConf)   );
       // more files here
 	} /*end my_spiffs_mount*/
 

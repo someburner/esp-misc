@@ -37,9 +37,11 @@
 /* Uncomment to ping an ip on timer */
 // #define PING_TEST
 
-// static uint8_t fsFoundWiFiConf = 0;
 
-static uint8_t orig_mac[6] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+/* Get from SDK API */
+static uint32 flash_id;
+
+static uint8_t orig_mac[6];
 
 os_timer_t heapTimer;
 
@@ -110,15 +112,12 @@ static void config_wifi()
 {
 #ifdef USER_HOSTNAME
    wifi_station_set_hostname(USER_HOSTNAME);
+   NODE_DBG("Hostname: %s\n", wifi_station_get_hostname());
 #endif /* USER_HOSTNAME */
-
-#ifndef STA_SSID
-   NODE_ERR("No Makefil WiFi config available.\n");
-   return;
-#endif
 
    NODE_DBG("Configuring WiFi...\n");
 
+#ifdef STA_SSID
    /* Assign SSID & Pass from Makefile if available */
    char sta_ssid[32] = STA_SSID;
 
@@ -137,16 +136,18 @@ static void config_wifi()
 
    os_memcpy(stconf.ssid, sta_ssid, strlen(sta_ssid));
 
-   #if STA_PASS_EN && defined(STA_PASS)
-   os_memcpy(stconf.password, sta_password, strlen(sta_password));
-   #endif
-
    NODE_DBG("WiFi setting: \nap: %s ", (char*)stconf.ssid);
    #if STA_PASS_EN && defined(STA_PASS)
+   os_memcpy(stconf.password, sta_password, strlen(sta_password));
    NODE_DBG("pw %s\n", (char*)stconf.password);
    #endif
-   NODE_DBG("%s", wifi_station_get_hostname());
    wifi_station_set_config(&stconf);
+#else
+   NODE_ERR("No Makefile WiFi config available.\n");
+   return;
+#endif
+
+   /* Start DHCP if not already */
    if (wifi_station_dhcpc_status() != DHCP_STARTED)
       { wifi_station_dhcpc_start(); }
    wifi_station_connect();
@@ -172,8 +173,8 @@ static void mount(int fs, bool force)
 void main_init(void)
 {
    /* Set up gpio/LED(s) */
+   // led_init();
    gpio_init();
-   led_init();
 
    int res = 0;
 
@@ -188,8 +189,8 @@ void main_init(void)
    NODE_DBG("Flash_ID = %x\n", flash_id);
 
    /* Mount Filesystem(s) */
-   mount(FS1, true);
    mount(FS0, true);
+   mount(FS1, true);
 
    /* Initialize file descriptors in memory
     * NOTE: Must not call until you're done mounting filesystem(s), but should
@@ -209,29 +210,31 @@ void main_init(void)
    * (i.e. already flashed once and set flag), then attempt to configure   *
    * from Makefile definitions                                             */
    NODE_DBG("Loading Makefile WiFi settings\n");
-   config_wifi();
 
+   /* Must be called before WiFi config */
    main_app_init(orig_mac);
 
+   config_wifi();
 
    /* This should always be called. If WiFi is -not- already configured, then *
     * we should still arm this timer as it checks if the WiFi reset button is *
     * being held. Otherwise, if we do have WiFi configured, this timer checks *
     * that we have an IP and SNTP timestamp.                                  */
-   arm_reconnect_timer(1011);
+   // arm_reconnect_timer(1011);
 
 
 #ifdef DEVELOP_VERSION
    os_memset(&heapTimer,0,sizeof(os_timer_t));
    os_timer_disarm(&heapTimer);
    os_timer_setfn(&heapTimer, (os_timer_func_t *)heapTimerCb, NULL);
-   os_timer_arm(&heapTimer, 4999, 1);
+   os_timer_arm(&heapTimer, 10000, 1);
 #endif /* DEVELOP_VERSION */
 
+#if 0
    struct rst_info *ri = system_get_rst_info();
    char rst_string[25];
    os_sprintf(rst_string, "Rst: %s", rst_codes[ri->reason]);
-
+#endif
 }
 
 /******************************************************************************
@@ -308,5 +311,6 @@ void user_init(void)
    /* Disable auto_connect on boot so we are in control of things */
    wifi_set_opmode(STATION_MODE);
    wifi_station_set_auto_connect(0);
+   wifi_station_set_reconnect_policy(false);
    system_init_done_cb(main_init);
 }

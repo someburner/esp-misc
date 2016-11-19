@@ -219,6 +219,7 @@ void setup_init(void)
    sntp_set_timezone(0); // Use UTC for universal time
    sntp_init();
 
+   /* Must be called before WiFi config */
    setup_app_init(orig_mac);
 
    config_wifi();

@@ -38,12 +38,12 @@
 
 /* Default UART buadrate: 115200, 921600, etc */
 #if USE_RX_FOR_SCAN
-   #define UART0_BIT_RATE_DEFAULT BIT_RATE_115200 // must use 115200 for scanner
-   #define UART1_BIT_RATE_DEFAULT BIT_RATE_921600 // debug- fastest
-   #define DEBUG_UART       1 // debug on UART 1 to not interfere with scanner
+   #define UART0_BIT_RATE_DEFAULT BIT_RATE_115200 // use 115200 for scanner
+   #define UART1_BIT_RATE_DEFAULT BIT_RATE_115200 // placeholder
+   #define DEBUG_UART       0 // debug on UART 0. no RX needed for scanner
 #else
    #define UART0_BIT_RATE_DEFAULT BIT_RATE_921600 // fastest
-   #define UART1_BIT_RATE_DEFAULT BIT_RATE_921600 // fastest
+   #define UART1_BIT_RATE_DEFAULT BIT_RATE_921600 // placeholder
    #define DEBUG_UART       0 // debug on UART 0 by default
 #endif
 

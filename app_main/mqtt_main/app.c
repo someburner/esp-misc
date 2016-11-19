@@ -69,7 +69,7 @@ static void mqttConnectedTestCb(uint32_t *args)
 	NODE_DBG("MQTT: Connected (test: start timer)\n");
    if (MQTT_Subscribe(client, main_mqtt->test_sub, 1))
    {
-      mqtt_api_pub_test("Hello!", 6);
+      //mqtt_api_pub_test("Hello!", 6);
       main_api_update_conn_state(MAIN_CONN_MQTT);
    }
 }
@@ -77,7 +77,7 @@ static void mqttConnectedTestCb(uint32_t *args)
 static void mqttDisconnectedCb(uint32_t *args)
 {
 	NODE_DBG("MQTT: Disconnected\n");
-	// main_api_update_conn_state(MAIN_CONN_DISCONNECTED);
+	main_api_update_conn_state(MAIN_CONN_DISCONNECTED);
 }
 
 static void mqttPublishedCb(uint32_t *args)

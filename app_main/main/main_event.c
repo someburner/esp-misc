@@ -493,7 +493,7 @@ static void wifiHandleEventCb(System_Event_t *evt)
          IP2STR(&evt->event_info.got_ip.ip), IP2STR(&evt->event_info.got_ip.mask),
          IP2STR(&evt->event_info.got_ip.gw));
          statusWifiUpdate(wifiState);
-         wifiStatus_mq = 2;
+         wifiStatus_mq = wifiIsConnected;
 
          netutil_nslookup(MAIN_DEFAULT_MQTT_HOST, nslookup_cb);
          arm_reconnect_timer(1234UL);

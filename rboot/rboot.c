@@ -17,7 +17,6 @@ static uint32 check_image(uint32 readpos) {
 	uint8 buffer[BUFFER_SIZE];
 	uint8 sectcount;
 	uint8 sectcurrent;
-	uint8 *writepos;
 	uint8 chksum = CHKSUM_INIT;
 	uint32 loop;
 	uint32 remaining;
@@ -74,7 +73,6 @@ static uint32 check_image(uint32 readpos) {
 		readpos += sizeof(section_header);
 
 		// get section address and length
-		writepos = section->address;
 		remaining = section->length;
 
 		while (remaining > 0) {
@@ -84,9 +82,8 @@ static uint32 check_image(uint32 readpos) {
 			if (SPIRead(readpos, buffer, readlen) != 0) {
 				return 0;
 			}
-			// increment next read and write positions
+			// increment next read position
 			readpos += readlen;
-			writepos += readlen;
 			// decrement remaining count
 			remaining -= readlen;
 			// add to chksum
@@ -122,7 +119,7 @@ static uint32 check_image(uint32 readpos) {
 	return romaddr;
 }
 
-#ifdef BOOT_GPIO_ENABLED
+#if defined (BOOT_GPIO_ENABLED) || defined(BOOT_GPIO_SKIP_ENABLED)
 
 #if BOOT_GPIO_NUM > 16
 #error "Invalid BOOT_GPIO_NUM value (disable BOOT_GPIO_ENABLED to disable this feature)"
@@ -251,8 +248,14 @@ static uint8 calc_chksum(uint8 *start, uint8 *end) {
  	romconf->count = 2;
  	romconf->roms[0] = SECTOR_SIZE * (BOOT_CONFIG_SECTOR + 1);
  	romconf->roms[1] = (flashsize / 2) + (SECTOR_SIZE * (BOOT_CONFIG_SECTOR + 1));
- }
- #endif
+#ifdef BOOT_GPIO_ENABLED
+	romconf->mode = MODE_GPIO_ROM;
+#endif
+#ifdef BOOT_GPIO_SKIP_ENABLED
+	romconf->mode = MODE_GPIO_SKIP;
+#endif
+}
+#endif
 
 // prevent this function being placed inline with main
 // to keep main's stack size as small as possible
@@ -269,11 +272,13 @@ uint32 NOINLINE find_image(void) {
 #ifdef BOOT_GPIO_ENABLED
 	uint8 gpio_boot = FALSE;
 #endif
+#if defined (BOOT_GPIO_ENABLED) || defined(BOOT_GPIO_SKIP_ENABLED)
+	uint8 sec;
+#endif
 #ifdef BOOT_RTC_ENABLED
 	rboot_rtc_data rtc;
 	uint8 temp_boot = FALSE;
 #endif
-   uint8 sec;
 
 	rboot_config *romconf = (rboot_config*)buffer;
 	rom_header *header = (rom_header*)buffer;
@@ -343,41 +348,44 @@ uint32 NOINLINE find_image(void) {
 	else if (flag == 0x0f) ets_printf("80 MHz\r\n");
 	else ets_printf("unknown\r\n");
 
- 	// print enabled options
- #ifdef BOOT_BIG_FLASH
- 	ets_printf("rBoot Option: Big flash\r\n");
- #endif
- #ifdef BOOT_CONFIG_CHKSUM
- 	ets_printf("rBoot Option: Config chksum\r\n");
- #endif
- #ifdef BOOT_GPIO_ENABLED
- 	ets_printf("rBoot Option: GPIO mode (%d)\r\n", BOOT_GPIO_NUM);
- #endif
- #ifdef BOOT_RTC_ENABLED
- 	ets_printf("rBoot Option: RTC data\r\n");
- #endif
- #ifdef BOOT_IROM_CHKSUM
- 	ets_printf("rBoot Option: irom chksum\r\n");
- #endif
- 	ets_printf("\r\n");
+	// print enabled options
+#ifdef BOOT_BIG_FLASH
+	ets_printf("rBoot Option: Big flash\r\n");
+#endif
+#ifdef BOOT_CONFIG_CHKSUM
+	ets_printf("rBoot Option: Config chksum\r\n");
+#endif
+#ifdef BOOT_GPIO_ENABLED
+	ets_printf("rBoot Option: GPIO rom mode (%d)\r\n", BOOT_GPIO_NUM);
+#endif
+#ifdef BOOT_GPIO_SKIP_ENABLED
+	ets_printf("rBoot Option: GPIO skip mode (%d)\r\n", BOOT_GPIO_NUM);
+#endif
+#ifdef BOOT_RTC_ENABLED
+	ets_printf("rBoot Option: RTC data\r\n");
+#endif
+#ifdef BOOT_IROM_CHKSUM
+	ets_printf("rBoot Option: irom chksum\r\n");
+#endif
+	ets_printf("\r\n");
 
- 	// read boot config
- 	SPIRead(BOOT_CONFIG_SECTOR * SECTOR_SIZE, buffer, SECTOR_SIZE);
- 	// fresh install or old version?
- 	if (romconf->magic != BOOT_CONFIG_MAGIC || romconf->version != BOOT_CONFIG_VERSION
- #ifdef BOOT_CONFIG_CHKSUM
- 		|| romconf->chksum != calc_chksum((uint8*)romconf, (uint8*)&romconf->chksum)
- #endif
- 		) {
- 		// create a default config for a standard 2 rom setup
- 		ets_printf("Writing default boot config.\r\n");
-  		ets_memset(romconf, 0x00, sizeof(rboot_config));
-  		romconf->magic = BOOT_CONFIG_MAGIC;
-  		romconf->version = BOOT_CONFIG_VERSION;
-      default_config(romconf, flashsize);
-  #ifdef BOOT_CONFIG_CHKSUM
-  		romconf->chksum = calc_chksum((uint8*)romconf, (uint8*)&romconf->chksum);
-  #endif
+	// read boot config
+	SPIRead(BOOT_CONFIG_SECTOR * SECTOR_SIZE, buffer, SECTOR_SIZE);
+	// fresh install or old version?
+	if (romconf->magic != BOOT_CONFIG_MAGIC || romconf->version != BOOT_CONFIG_VERSION
+#ifdef BOOT_CONFIG_CHKSUM
+		|| romconf->chksum != calc_chksum((uint8*)romconf, (uint8*)&romconf->chksum)
+#endif
+		) {
+		// create a default config for a standard 2 rom setup
+		ets_printf("Writing default boot config.\r\n");
+		ets_memset(romconf, 0x00, sizeof(rboot_config));
+		romconf->magic = BOOT_CONFIG_MAGIC;
+		romconf->version = BOOT_CONFIG_VERSION;
+		default_config(romconf, flashsize);
+#ifdef BOOT_CONFIG_CHKSUM
+		romconf->chksum = calc_chksum((uint8*)romconf, (uint8*)&romconf->chksum);
+#endif
 		// write new config sector
 		SPIEraseSector(BOOT_CONFIG_SECTOR);
 		SPIWrite(BOOT_CONFIG_SECTOR * SECTOR_SIZE, buffer, SECTOR_SIZE);
@@ -403,22 +411,30 @@ uint32 NOINLINE find_image(void) {
 	}
 #endif
 
-#ifdef BOOT_GPIO_ENABLED
+#if defined(BOOT_GPIO_ENABLED) || defined (BOOT_GPIO_SKIP_ENABLED)
 	if (perform_gpio_boot(romconf)) {
+#if defined(BOOT_GPIO_ENABLED)
 		if (romconf->gpio_rom >= romconf->count) {
 			ets_printf("Invalid GPIO rom selected.\r\n");
 			return 0;
 		}
 		ets_printf("Booting GPIO-selected rom.\r\n");
+		romToBoot = romconf->gpio_rom;
+		gpio_boot = TRUE;
+#elif defined(BOOT_GPIO_SKIP_ENABLED)
+		romToBoot = romconf->current_rom + 1;
+		if (romToBoot >= romconf->count) {
+			romToBoot = 0;
+		}
+		romconf->current_rom = romToBoot;
+#endif
+		updateConfig = TRUE;
 		if (romconf->mode & MODE_GPIO_ERASES_SDKCONFIG) {
 			ets_printf("Erasing SDK config sectors before booting.\r\n");
 			for (sec = 1; sec < 5; sec++) {
 				SPIEraseSector((flashsize / SECTOR_SIZE) - sec);
 			}
 		}
-		romToBoot = romconf->gpio_rom;
-		gpio_boot = TRUE;
-		updateConfig = TRUE;
 	}
 #endif
 
@@ -429,7 +445,7 @@ uint32 NOINLINE find_image(void) {
 		ets_printf("Invalid rom selected, defaulting to 0.\r\n");
 		romToBoot = 0;
 		romconf->current_rom = 0;
-      romconf->last_setup_rom = 0;
+		romconf->last_setup_rom = 0;
 		updateConfig = TRUE;
 	}
 
@@ -474,7 +490,6 @@ uint32 NOINLINE find_image(void) {
 	// re-write config, if required
 	if (updateConfig) {
 		romconf->current_rom = romToBoot;
-
 #ifdef BOOT_CONFIG_CHKSUM
 		romconf->chksum = calc_chksum((uint8*)romconf, (uint8*)&romconf->chksum);
 #endif
